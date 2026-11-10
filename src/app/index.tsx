@@ -1,98 +1,130 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useMemo, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { ScreenContainer, SearchField } from '@/components';
+import {
+  PeriodicHeader,
+  PeriodicLegend,
+  PeriodicMatrix,
+} from '@/features/periodic-table';
+import { ElementOfTheDayCard } from '@/components/ElementOfTheDayCard';
+import { elementRepository } from '@/services/elementService';
+import { useTheme } from '@/theme';
+import { ElementBase, ElementCategory } from '@/types';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+export default function PeriodicTableScreen() {
+  const theme = useTheme();
+  const router = useRouter();
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+  // Load all 118 elements from local offline repository
+  const allElements = useMemo(() => elementRepository.getAllBaseElements(), []);
+
+  // Family filtering state
+  const [selectedCategory, setSelectedCategory] = useState<ElementCategory | null>(null);
+
+  // Search input state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+
+  // Compute category counts
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const el of allElements) {
+      counts[el.category] = (counts[el.category] ?? 0) + 1;
+    }
+    return counts;
+  }, [allElements]);
+
+  // Handle element selection & navigation
+  const handleSelectElement = (element: ElementBase) => {
+    router.push(`/element/${element.atomicNumber}` as any);
+  };
+
+  // Filtered elements for search feedback or highlighting
+  const filteredElements = useMemo(() => {
+    let result = allElements;
+    if (selectedCategory) {
+      result = result.filter((el) => el.category === selectedCategory);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter(
+        (el) =>
+          el.nameFa.includes(q) ||
+          el.symbol.toLowerCase().includes(q) ||
+          el.atomicNumber.toString() === q
+      );
+    }
+    return result;
+  }, [allElements, selectedCategory, searchQuery]);
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+    <ScreenContainer scrollable={false} contentContainerStyle={styles.containerPadding}>
+      {/* Header with Title, Element Counter & Search Trigger */}
+      <PeriodicHeader
+        totalElementsCount={allElements.length}
+        filteredCount={filteredElements.length}
+        onSearchPress={() => router.push('/search' as any)}
+        onLearningPress={() => router.push('/learning' as any)}
+        onPersonalPress={() => router.push('/personal' as any)}
+        onToolsPress={() => router.push('/tools' as any)}
+        onCreatorPress={() => router.push('/creator' as any)}
+      />
 
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+      {/* Featured Element of the Day */}
+      <ElementOfTheDayCard />
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
+      {/* Optional Search Bar Overlay/Expansion */}
+      {showSearch ? (
+        <View style={styles.searchContainer}>
+          <SearchField
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="جستجوی سریع در جدول (نام، نماد یا عدد اتمی)..."
+            autoFocus
           />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
+        </View>
+      ) : null}
 
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+      {/* Centralized Category Filter Bar */}
+      <View style={styles.legendContainer}>
+        <PeriodicLegend
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+          elementCountsByCategory={categoryCounts}
+        />
+      </View>
+
+      {/* Full 18-Group, 7-Period + Separate Lanthanides & Actinides Scrollable Matrix */}
+      <View style={styles.matrixContainer}>
+        <PeriodicMatrix
+          elements={allElements}
+          onSelectElement={handleSelectElement}
+          selectedCategory={selectedCategory}
+          selectedElementNumber={
+            searchQuery.trim() && filteredElements.length === 1
+              ? filteredElements[0].atomicNumber
+              : null
+          }
+          cellSize={60}
+        />
+      </View>
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  containerPadding: {
+    padding: 0,
+  },
+  searchContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 4,
+  },
+  legendContainer: {
+    paddingHorizontal: 16,
+  },
+  matrixContainer: {
     flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
   },
 });

@@ -1,0 +1,3 @@
+// Favorites Feature Module
+export {};
+
