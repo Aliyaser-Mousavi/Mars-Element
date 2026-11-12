@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
+import { toPersianDigits } from '@/utils/rtl';
 
 export interface PeriodicHeaderProps {
   totalElementsCount: number;
@@ -26,100 +27,253 @@ export const PeriodicHeader: React.FC<PeriodicHeaderProps> = ({
 
   return (
     <View style={styles.container}>
-      <View style={styles.titleRow}>
-        <View style={styles.textContainer}>
-          <Text
-            style={[
-              theme.typography.pageHeading,
-              styles.mainTitle,
-              { color: theme.colors.forestGreen },
-            ]}
-          >
-            جدول تناوبی عناصر شیمیایی
-          </Text>
-          <Text
-            style={[
-              theme.typography.bodySmall,
-              styles.subtitle,
-              { color: theme.colors.secondaryText, marginTop: 2 },
-            ]}
-          >
-            سامانه ۱۱۸ عنصر با چینش دقیق گروه‌ها و دوره‌ها
-          </Text>
+      {/* Top Identity Row */}
+      <View style={styles.topRow}>
+        {/* Brand Title & Subtitle */}
+        <View style={styles.brandContainer}>
+          <View style={styles.titleWithEmblem}>
+            <View
+              style={[
+                styles.emblemBox,
+                {
+                  backgroundColor: theme.isDark ? theme.colors.surfaceElevated : theme.colors.lightGreen,
+                  borderColor: theme.isDark ? theme.colors.border : `${theme.colors.scientificGreen}30`,
+                },
+              ]}
+            >
+              <Ionicons
+                name="nuclear"
+                size={16}
+                color={theme.colors.scientificGreen}
+              />
+            </View>
+
+            <View>
+              <Text
+                style={[
+                  styles.brandTitle,
+                  {
+                    color: theme.isDark ? theme.colors.primaryText : theme.colors.forestGreen,
+                    fontFamily: theme.fontFamily.persianBold,
+                  },
+                ]}
+              >
+                مارس المنت
+              </Text>
+              <View style={styles.metaRow}>
+                <Text
+                  style={[
+                    styles.brandSubtitle,
+                    {
+                      color: theme.colors.secondaryText,
+                      fontFamily: theme.fontFamily.persianRegular,
+                    },
+                  ]}
+                >
+                  جدول تناوبی عناصر
+                </Text>
+                <View style={[styles.metaDot, { backgroundColor: theme.colors.secondaryText }]} />
+                <View
+                  style={[
+                    styles.countPill,
+                    {
+                      backgroundColor: theme.isDark ? `${theme.colors.scientificGreen}20` : theme.colors.lightGreen,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.countText,
+                      {
+                        color: theme.colors.scientificGreen,
+                        fontFamily: theme.fontFamily.persianBold,
+                      },
+                    ]}
+                  >
+                    {toPersianDigits(filteredCount ?? totalElementsCount)} عنصر
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
         </View>
 
-        {/* Action Row */}
-        <View style={styles.actionRow}>
-          {onCreatorPress ? (
-            <TouchableOpacity
-              onPress={onCreatorPress}
+        {/* Quick Search Action */}
+        {onSearchPress ? (
+          <TouchableOpacity
+            style={[
+              styles.searchTriggerBtn,
+              {
+                backgroundColor: theme.isDark ? theme.colors.surfaceElevated : theme.colors.surface,
+                borderColor: theme.isDark ? theme.colors.border : theme.colors.cardBorder,
+              },
+            ]}
+            onPress={onSearchPress}
+            activeOpacity={theme.interactive.activeOpacity}
+            accessibilityRole="button"
+            accessibilityLabel="جستجوی سریع در عناصر"
+          >
+            <Ionicons name="search" size={16} color={theme.colors.scientificGreen} />
+            <Text
               style={[
-                styles.searchBtn,
-                { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+                styles.searchBtnText,
+                {
+                  color: theme.colors.primaryText,
+                  fontFamily: theme.fontFamily.persianMedium,
+                },
               ]}
-              accessibilityRole="button"
-              accessibilityLabel="درباره سازنده"
             >
-              <Ionicons name="person-outline" size={17} color={theme.colors.forestGreen} />
-            </TouchableOpacity>
-          ) : null}
+              جستجو
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
 
-          {onToolsPress ? (
-            <TouchableOpacity
-              onPress={onToolsPress}
+      {/* Navigation Quick Access Bar */}
+      <View style={styles.navBar}>
+        {onLearningPress ? (
+          <TouchableOpacity
+            style={[
+              styles.navItem,
+              {
+                backgroundColor: theme.isDark ? theme.colors.card : theme.colors.surface,
+                borderColor: theme.colors.cardBorder,
+              },
+            ]}
+            onPress={onLearningPress}
+            activeOpacity={theme.interactive.activeOpacity}
+            accessibilityRole="button"
+            accessibilityLabel="مرکز آموزش شیمی"
+          >
+            <View
               style={[
-                styles.searchBtn,
-                { backgroundColor: theme.colors.lightGreen, borderColor: theme.colors.border },
+                styles.navIconBox,
+                { backgroundColor: theme.isDark ? `${theme.colors.oceanBlue}20` : '#EBF3F8' },
               ]}
-              accessibilityRole="button"
-              accessibilityLabel="ابزارها و محاسبه‌گر"
             >
-              <Ionicons name="construct-outline" size={17} color={theme.colors.forestGreen} />
-            </TouchableOpacity>
-          ) : null}
+              <Ionicons name="school-outline" size={15} color={theme.colors.oceanBlue} />
+            </View>
+            <Text
+              style={[
+                styles.navLabel,
+                {
+                  color: theme.colors.primaryText,
+                  fontFamily: theme.fontFamily.persianMedium,
+                },
+              ]}
+            >
+              آموزش
+            </Text>
+          </TouchableOpacity>
+        ) : null}
 
-          {onPersonalPress ? (
-            <TouchableOpacity
-              onPress={onPersonalPress}
+        {onPersonalPress ? (
+          <TouchableOpacity
+            style={[
+              styles.navItem,
+              {
+                backgroundColor: theme.isDark ? theme.colors.card : theme.colors.surface,
+                borderColor: theme.colors.cardBorder,
+              },
+            ]}
+            onPress={onPersonalPress}
+            activeOpacity={theme.interactive.activeOpacity}
+            accessibilityRole="button"
+            accessibilityLabel="علاقه‌مندی‌ها و مقایسه عناصر"
+          >
+            <View
               style={[
-                styles.searchBtn,
-                { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+                styles.navIconBox,
+                { backgroundColor: theme.isDark ? `${theme.colors.goldenAccent}20` : '#FEF6E9' },
               ]}
-              accessibilityRole="button"
-              accessibilityLabel="علاقه‌مندی‌ها و مقایسه"
             >
-              <Ionicons name="bookmark-outline" size={17} color={theme.colors.forestGreen} />
-            </TouchableOpacity>
-          ) : null}
+              <Ionicons name="bookmark-outline" size={15} color={theme.colors.goldenAccent} />
+            </View>
+            <Text
+              style={[
+                styles.navLabel,
+                {
+                  color: theme.colors.primaryText,
+                  fontFamily: theme.fontFamily.persianMedium,
+                },
+              ]}
+            >
+              نشان‌شده‌ها
+            </Text>
+          </TouchableOpacity>
+        ) : null}
 
-          {onLearningPress ? (
-            <TouchableOpacity
-              onPress={onLearningPress}
+        {onToolsPress ? (
+          <TouchableOpacity
+            style={[
+              styles.navItem,
+              {
+                backgroundColor: theme.isDark ? theme.colors.card : theme.colors.surface,
+                borderColor: theme.colors.cardBorder,
+              },
+            ]}
+            onPress={onToolsPress}
+            activeOpacity={theme.interactive.activeOpacity}
+            accessibilityRole="button"
+            accessibilityLabel="ابزارها و محاسبه‌گر شیمی"
+          >
+            <View
               style={[
-                styles.searchBtn,
-                { backgroundColor: theme.colors.lightGreen, borderColor: theme.colors.border },
+                styles.navIconBox,
+                { backgroundColor: theme.isDark ? `${theme.colors.scientificGreen}20` : theme.colors.lightGreen },
               ]}
-              accessibilityRole="button"
-              accessibilityLabel="مرکز آموزش"
             >
-              <Ionicons name="school-outline" size={17} color={theme.colors.forestGreen} />
-            </TouchableOpacity>
-          ) : null}
+              <Ionicons name="calculator-outline" size={15} color={theme.colors.scientificGreen} />
+            </View>
+            <Text
+              style={[
+                styles.navLabel,
+                {
+                  color: theme.colors.primaryText,
+                  fontFamily: theme.fontFamily.persianMedium,
+                },
+              ]}
+            >
+              ابزارها
+            </Text>
+          </TouchableOpacity>
+        ) : null}
 
-          {onSearchPress ? (
-            <TouchableOpacity
-              onPress={onSearchPress}
+        {onCreatorPress ? (
+          <TouchableOpacity
+            style={[
+              styles.navItem,
+              {
+                backgroundColor: theme.isDark ? theme.colors.card : theme.colors.surface,
+                borderColor: theme.colors.cardBorder,
+              },
+            ]}
+            onPress={onCreatorPress}
+            activeOpacity={theme.interactive.activeOpacity}
+            accessibilityRole="button"
+            accessibilityLabel="درباره سازنده"
+          >
+            <View
               style={[
-                styles.searchBtn,
-                { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+                styles.navIconBox,
+                { backgroundColor: theme.isDark ? `${theme.colors.purple}20` : '#F4EFF9' },
               ]}
-              accessibilityRole="button"
-              accessibilityLabel="جستجوی عنصر"
             >
-              <Ionicons name="search-outline" size={17} color={theme.colors.scientificGreen} />
-            </TouchableOpacity>
-          ) : null}
-        </View>
+              <Ionicons name="person-outline" size={15} color={theme.colors.purple} />
+            </View>
+            <Text
+              style={[
+                styles.navLabel,
+                {
+                  color: theme.colors.primaryText,
+                  fontFamily: theme.fontFamily.persianMedium,
+                },
+              ]}
+            >
+              سازنده
+            </Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
     </View>
   );
@@ -128,42 +282,100 @@ export const PeriodicHeader: React.FC<PeriodicHeaderProps> = ({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 10,
     paddingBottom: 4,
+    gap: 8,
   },
-  titleRow: {
+  topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  textContainer: {
+  brandContainer: {
     flex: 1,
   },
-  mainTitle: {
-    textAlign: 'right',
-  },
-  subtitle: {
-    textAlign: 'right',
-  },
-  actionRow: {
+  titleWithEmblem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginStart: 12,
+    gap: 10,
   },
-  badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  searchBtn: {
+  emblemBox: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: 10,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  brandTitle: {
+    fontSize: 16,
+    lineHeight: 22,
+    textAlign: 'right',
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 1,
+  },
+  brandSubtitle: {
+    fontSize: 11,
+    lineHeight: 16,
+    textAlign: 'right',
+  },
+  metaDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    opacity: 0.5,
+  },
+  countPill: {
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 8,
+  },
+  countText: {
+    fontSize: 10,
+    lineHeight: 14,
+  },
+  searchTriggerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  searchBtnText: {
+    fontSize: 12,
+  },
+  navBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 6,
+  },
+  navItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 7,
+    paddingHorizontal: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 6,
+  },
+  navIconBox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navLabel: {
+    fontSize: 11,
+    textAlign: 'center',
+  },
 });
-

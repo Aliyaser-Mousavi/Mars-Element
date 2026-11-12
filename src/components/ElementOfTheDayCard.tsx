@@ -2,56 +2,170 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { lightAppTheme } from '../theme';
-import { getElementOfTheDay } from '../services/dailyElementService';
-import { CATEGORY_COLOR_MAP } from '../constants/colors';
-import { ELEMENT_CATEGORIES } from '../constants/element-categories';
-import { toPersianDigits } from '../utils/rtl';
+import { useTheme } from '@/theme';
+import { getElementOfTheDay } from '@/services/dailyElementService';
+import { CATEGORY_COLOR_MAP } from '@/constants/colors';
+import { ELEMENT_CATEGORIES } from '@/constants/element-categories';
+import { toPersianDigits } from '@/utils/rtl';
 
 export const ElementOfTheDayCard: React.FC = () => {
   const router = useRouter();
+  const theme = useTheme();
   const { element, funFact } = getElementOfTheDay();
-  const categoryColor = CATEGORY_COLOR_MAP[element.classification.category] || lightAppTheme.colors.scientificGreen;
+  const categoryColor =
+    CATEGORY_COLOR_MAP[element.classification.category] || theme.colors.scientificGreen;
   const categoryMeta = ELEMENT_CATEGORIES[element.classification.category];
 
   return (
     <TouchableOpacity
-      style={[styles.container, { borderLeftColor: categoryColor }]}
-      activeOpacity={0.8}
+      style={[
+        styles.container,
+        {
+          backgroundColor: theme.colors.card,
+          borderColor: theme.colors.cardBorder,
+          borderStartColor: categoryColor,
+          borderStartWidth: 3.5,
+          borderRadius: theme.borderRadius.md,
+        },
+      ]}
+      activeOpacity={theme.interactive.activeOpacity}
       onPress={() => router.push(`/element/${element.identity.atomicNumber}` as any)}
+      accessibilityRole="button"
+      accessibilityLabel={`عنصر منتخب امروز، ${element.identity.nameFa}، ${funFact}`}
     >
-      <View style={styles.headerRow}>
-        <View style={styles.badge}>
-          <Ionicons name="sparkles" size={13} color="#D97706" />
-          <Text style={styles.badgeText}>عنصر منتخب امروز</Text>
-        </View>
-
-        <Text style={styles.moreText}>مشاهده شناسنامه کامل ←</Text>
+      {/* Mini Element Symbol Tile */}
+      <View
+        style={[
+          styles.miniTile,
+          {
+            borderColor: `${categoryColor}80`,
+            backgroundColor: `${categoryColor}14`,
+            borderRadius: theme.borderRadius.sm,
+          },
+        ]}
+      >
+        <Text
+          style={[
+            styles.tileNumber,
+            {
+              color: theme.colors.secondaryText,
+              fontFamily: theme.fontFamily.latinScientific,
+            },
+          ]}
+        >
+          {element.identity.atomicNumber}
+        </Text>
+        <Text
+          style={[
+            styles.tileSymbol,
+            {
+              color: theme.colors.primaryText,
+              fontFamily: theme.fontFamily.latinScientific,
+            },
+          ]}
+        >
+          {element.identity.symbol}
+        </Text>
       </View>
 
-      <View style={styles.contentRow}>
-        {/* Mini Symbol Tile */}
-        <View style={[styles.tileBox, { borderColor: categoryColor, backgroundColor: `${categoryColor}15` }]}>
-          <Text style={styles.tileNumber}>{toPersianDigits(element.identity.atomicNumber)}</Text>
-          <Text style={styles.tileSymbol}>{element.identity.symbol}</Text>
-        </View>
-
-        {/* Text Info */}
-        <View style={styles.infoCol}>
-          <View style={styles.nameRow}>
-            <Text style={styles.nameFa}>{element.identity.nameFa}</Text>
-            <Text style={styles.nameEn}>{element.identity.nameEn}</Text>
-            <View style={[styles.familyChip, { backgroundColor: `${categoryColor}20` }]}>
-              <Text style={[styles.familyText, { color: categoryColor }]}>
-                {categoryMeta?.nameFa ?? element.classification.category}
-              </Text>
-            </View>
+      {/* Main Info Column */}
+      <View style={styles.infoCol}>
+        {/* Header line: Badge + Category */}
+        <View style={styles.badgeLine}>
+          <View style={styles.headerTag}>
+            <Ionicons name="sparkles" size={11} color={theme.colors.goldenAccent} />
+            <Text
+              style={[
+                styles.headerTagText,
+                {
+                  color: theme.isDark ? theme.colors.goldenAccent : '#92400E',
+                  fontFamily: theme.fontFamily.persianBold,
+                },
+              ]}
+            >
+              عنصر منتخب امروز
+            </Text>
           </View>
 
-          <Text style={styles.factText} numberOfLines={2}>
-            {funFact}
+          <View
+            style={[
+              styles.categoryTag,
+              {
+                backgroundColor: `${categoryColor}1A`,
+                borderColor: `${categoryColor}40`,
+              },
+            ]}
+          >
+            <View style={[styles.categoryDot, { backgroundColor: categoryColor }]} />
+            <Text
+              style={[
+                styles.categoryText,
+                {
+                  color: categoryColor,
+                  fontFamily: theme.fontFamily.persianMedium,
+                },
+              ]}
+            >
+              {categoryMeta?.nameFa ?? element.classification.category}
+            </Text>
+          </View>
+        </View>
+
+        {/* Name and English Title */}
+        <View style={styles.nameRow}>
+          <Text
+            style={[
+              styles.nameFa,
+              {
+                color: theme.colors.primaryText,
+                fontFamily: theme.fontFamily.persianBold,
+              },
+            ]}
+          >
+            {element.identity.nameFa}
+          </Text>
+          <Text
+            style={[
+              styles.nameEn,
+              {
+                color: theme.colors.secondaryText,
+                fontFamily: theme.fontFamily.latinScientific,
+              },
+            ]}
+          >
+            ({element.identity.nameEn})
           </Text>
         </View>
+
+        {/* Fun Fact preview */}
+        <Text
+          style={[
+            styles.funFactText,
+            {
+              color: theme.colors.secondaryText,
+              fontFamily: theme.fontFamily.persianRegular,
+            },
+          ]}
+          numberOfLines={1}
+        >
+          {funFact}
+        </Text>
+      </View>
+
+      {/* Trailing chevron in Persian direction (chevron-back is to the left) */}
+      <View
+        style={[
+          styles.chevronWrapper,
+          {
+            backgroundColor: theme.isDark ? theme.colors.surfaceElevated : theme.colors.lightGreen,
+          },
+        ]}
+      >
+        <Ionicons
+          name="chevron-back"
+          size={16}
+          color={theme.colors.scientificGreen}
+        />
       </View>
     </TouchableOpacity>
   );
@@ -59,107 +173,97 @@ export const ElementOfTheDayCard: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: lightAppTheme.colors.surface,
-    borderRadius: lightAppTheme.borderRadius.md,
-    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     marginHorizontal: 16,
-    marginBottom: 8,
+    marginVertical: 4,
     borderWidth: 1,
-    borderColor: lightAppTheme.colors.border,
-    borderLeftWidth: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
-    shadowRadius: 3,
+    shadowRadius: 2,
     elevation: 1,
+    gap: 10,
   },
-  headerRow: {
-    flexDirection: 'row',
+  miniTile: {
+    width: 44,
+    height: 50,
+    borderWidth: 1.2,
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#FEF3C7',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  badgeText: {
-    fontSize: 10.5,
-    fontFamily: lightAppTheme.fontFamily.persianBold,
-    color: '#92400E',
-  },
-  moreText: {
-    fontSize: 10.5,
-    fontFamily: lightAppTheme.fontFamily.persianMedium,
-    color: lightAppTheme.colors.forestGreen,
-  },
-  contentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  tileBox: {
-    width: 50,
-    height: 56,
-    borderRadius: 8,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 2,
+    paddingVertical: 3,
+    paddingHorizontal: 2,
   },
   tileNumber: {
-    position: 'absolute',
-    top: 2,
-    left: 4,
     fontSize: 9,
-    fontFamily: lightAppTheme.fontFamily.persianBold,
-    color: lightAppTheme.colors.primaryText,
+    fontWeight: '600',
+    alignSelf: 'flex-start',
+    marginStart: 3,
   },
   tileSymbol: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    fontFamily: 'System',
-    color: lightAppTheme.colors.primaryText,
+    fontSize: 19,
+    fontWeight: '700',
+    lineHeight: 22,
   },
   infoCol: {
     flex: 1,
+    justifyContent: 'center',
+    gap: 2,
+  },
+  badgeLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 6,
+  },
+  headerTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  headerTagText: {
+    fontSize: 10,
+  },
+  categoryTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 10,
+    borderWidth: 0.8,
+  },
+  categoryDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+  },
+  categoryText: {
+    fontSize: 9.5,
   },
   nameRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    flexWrap: 'wrap',
+    alignItems: 'baseline',
+    gap: 5,
   },
   nameFa: {
-    fontSize: 14,
-    fontFamily: lightAppTheme.fontFamily.persianBold,
-    color: lightAppTheme.colors.primaryText,
+    fontSize: 13.5,
+    lineHeight: 18,
   },
   nameEn: {
-    fontSize: 11,
-    fontFamily: 'System',
-    color: lightAppTheme.colors.secondaryText,
+    fontSize: 10.5,
   },
-  familyChip: {
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 4,
-    marginLeft: 'auto',
+  funFactText: {
+    fontSize: 10.5,
+    lineHeight: 15,
   },
-  familyText: {
-    fontSize: 9,
-    fontFamily: lightAppTheme.fontFamily.persianMedium,
-  },
-  factText: {
-    fontSize: 11,
-    fontFamily: lightAppTheme.fontFamily.persianRegular,
-    color: lightAppTheme.colors.secondaryText,
-    marginTop: 4,
-    lineHeight: 16,
+  chevronWrapper: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

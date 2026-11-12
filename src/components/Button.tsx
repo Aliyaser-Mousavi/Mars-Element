@@ -11,7 +11,14 @@ import {
 } from 'react-native';
 import { useTheme } from '@/theme';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost';
+export type ButtonVariant =
+  | 'primary'
+  | 'secondary'
+  | 'outline'
+  | 'ghost'
+  | 'tonal'
+  | 'danger';
+
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export interface ButtonProps {
@@ -25,6 +32,7 @@ export interface ButtonProps {
   iconPosition?: 'start' | 'end';
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
+  accessibilityLabel?: string;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -38,32 +46,45 @@ export const Button: React.FC<ButtonProps> = ({
   iconPosition = 'start',
   style,
   textStyle,
+  accessibilityLabel,
 }) => {
   const theme = useTheme();
 
   const getContainerStyle = (): ViewStyle => {
-    let backgroundColor = theme.colors.forestGreen;
+    let backgroundColor: string = theme.colors.forestGreen;
     let borderColor = 'transparent';
     let borderWidth = 0;
 
     switch (variant) {
       case 'primary':
-        backgroundColor = theme.colors.forestGreen;
+        backgroundColor = theme.isDark
+          ? theme.colors.scientificGreen
+          : theme.colors.forestGreen;
         break;
       case 'secondary':
-        backgroundColor = theme.colors.scientificGreen;
+        backgroundColor = theme.isDark
+          ? theme.colors.surfaceElevated
+          : theme.colors.scientificGreen;
+        break;
+      case 'tonal':
+        backgroundColor = theme.colors.lightGreen;
         break;
       case 'outline':
         backgroundColor = 'transparent';
-        borderColor = theme.colors.scientificGreen;
+        borderColor = theme.isDark
+          ? theme.colors.scientificGreen
+          : theme.colors.forestGreen;
         borderWidth = 1.5;
         break;
       case 'ghost':
         backgroundColor = 'transparent';
         break;
+      case 'danger':
+        backgroundColor = theme.colors.coral;
+        break;
     }
 
-    let minHeight = 44;
+    let minHeight: number = theme.layout.minTouchTarget; // 44
     let paddingHorizontal = theme.spacing.lg;
     let paddingVertical = theme.spacing.sm;
 
@@ -85,7 +106,7 @@ export const Button: React.FC<ButtonProps> = ({
       paddingHorizontal,
       paddingVertical,
       borderRadius: theme.borderRadius.md,
-      opacity: disabled || loading ? 0.6 : 1,
+      opacity: disabled || loading ? 0.5 : 1,
     };
   };
 
@@ -93,10 +114,13 @@ export const Button: React.FC<ButtonProps> = ({
     switch (variant) {
       case 'primary':
       case 'secondary':
+      case 'danger':
         return '#FFFFFF';
+      case 'tonal':
+        return theme.isDark ? theme.colors.primaryText : theme.colors.forestGreen;
       case 'outline':
       case 'ghost':
-        return theme.colors.scientificGreen;
+        return theme.isDark ? theme.colors.scientificGreen : theme.colors.forestGreen;
     }
   };
 
@@ -105,18 +129,25 @@ export const Button: React.FC<ButtonProps> = ({
       ? theme.typography.bodySmall
       : size === 'lg'
       ? theme.typography.bodyLarge
-      : theme.typography.bodyMedium;
+      : theme.typography.buttonLabel;
 
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled || loading}
+      hitSlop={size === 'sm' ? theme.interactive.hitSlopSm : undefined}
       style={({ pressed }) => [
         styles.base,
         getContainerStyle(),
-        pressed && !disabled && !loading && styles.pressed,
+        pressed && !disabled && !loading && {
+          opacity: theme.interactive.activeOpacity,
+          transform: [{ scale: theme.interactive.pressedScale }],
+        },
         style,
       ]}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel || title}
+      accessibilityState={{ disabled: disabled || loading }}
     >
       {loading ? (
         <ActivityIndicator
@@ -154,9 +185,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
   },
-  pressed: {
-    opacity: 0.85,
-  },
   contentRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -175,4 +203,3 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
 });
-

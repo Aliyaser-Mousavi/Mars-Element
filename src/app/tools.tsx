@@ -1,127 +1,167 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
-import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { ScreenContainer } from '../components';
-import { lightAppTheme } from '../theme';
-import { useAppTheme } from '../theme/ThemeContext';
-import { ThemePreference } from '../services/themeService';
 import { MolarMassCalculatorView } from '../features/tools/MolarMassCalculatorView';
 import { PeriodicTrendsView } from '../features/tools/PeriodicTrendsView';
+import { ThemePreference } from '../services/themeService';
+import { useTheme } from '../theme';
+import { useAppTheme } from '../theme/ThemeContext';
 
 type ToolTab = 'calculator' | 'trends' | 'glossary' | 'settings';
 
+interface TabItemDef {
+  id: ToolTab;
+  titleFa: string;
+  icon: string;
+}
+
+const TOOL_TABS: TabItemDef[] = [
+  { id: 'calculator', titleFa: 'جرم مولی', icon: 'calculator-outline' },
+  { id: 'trends', titleFa: 'روندهای تناوبی', icon: 'trending-up-outline' },
+  { id: 'glossary', titleFa: 'دانش‌نامه شیمی', icon: 'book-outline' },
+  { id: 'settings', titleFa: 'تنظیمات پوسته', icon: 'color-palette-outline' },
+];
+
 const GLOSSARY_ITEMS = [
   {
-    titleFa: 'عدد اتمی (Atomic Number - Z)',
+    titleFa: 'عدد اتمی',
+    titleEn: 'Atomic Number (Z)',
     bodyFa:
-      'تعداد پروتون‌های موجود در هسته هر اتم. عدد اتمی هویت شیمیایی هر عنصر را معین می‌کند؛ برای نمونه تمام اتم‌های دارای ۶ پروتون، کربن هستند.',
+      'تعداد پروتون‌های موجود در هسته هر اتم. عدد اتمی هویت شیمیایی هر عنصر را معین می‌کند؛ برای نمونه تمام اتم‌های دارای ۶ پروتون در جهان، کربن نام دارند.',
+    icon: 'nuclear-outline',
   },
   {
-    titleFa: 'جرم اتمی استاندارد (Standard Atomic Mass)',
+    titleFa: 'جرم اتمی استاندارد',
+    titleEn: 'Standard Atomic Mass',
     bodyFa:
-      'میانگین جرم اتم‌های یک عنصر بر پایه فراوانی طبیعی ایزوتوپ‌های پایدار آن در پوسته زمین و بر حسب یکای جرم اتمی (دالتون یا u).',
+      'میانگین وزنی جرم اتم‌های یک عنصر بر پایه فراوانی طبیعی ایزوتوپ‌های پایدار آن در پوسته زمین و بر حسب یکای جرم اتمی (دالتون یا u).',
+    icon: 'scale-outline',
   },
   {
-    titleFa: 'آرایش الکترونی (Electron Configuration)',
+    titleFa: 'آرایش الکترونی',
+    titleEn: 'Electron Configuration',
     bodyFa:
-      'نحوه توزیع الکترون‌ها در لایه‌ها و زیرلایه‌های اتم (s, p, d, f) بر اساس اصل آفبا، قاعده هوند و اصل طرد پاولی.',
+      'نحوه توزیع الکترون‌ها در لایه‌ها و زیرلایه‌های اتم (s, p, d, f) بر اساس اصل آفبا (کمترین انرژی)، قاعده هوند و اصل طرد پاولی.',
+    icon: 'layers-outline',
   },
   {
-    titleFa: 'الکترونگاتیوی (Electronegativity)',
+    titleFa: 'الکترونگاتیوی',
+    titleEn: 'Electronegativity',
     bodyFa:
-      'میزان تمایل نسبی یک اتم برای ربایش و کشیدن جفت‌الکترون‌های اشتراکی در یک پیوند کووالانسی به سمت خود.',
+      'میزان تمایل نسبی یک اتم برای ربایش و کشیدن جفت‌الکترون‌های اشتراکی در یک پیوند کووالانسی به سمت خود در مقیاس لینوس پاولینگ.',
+    icon: 'magnet-outline',
   },
   {
-    titleFa: 'انرژی نخستین یونش (First Ionization Energy)',
+    titleFa: 'انرژی نخستین یونش',
+    titleEn: 'First Ionization Energy',
     bodyFa:
-      'مقدار انرژی لازم برای جدا کردن یک مول الکترون از یک مول اتم گازی در حالت پایه و تبدیل آن به یون یک‌بار مثبت.',
+      'حداقل مقدار انرژی لازم برای جدا کردن یک مول الکترون با کمترین پیوند از یک مول اتم گازی در حالت پایه و تبدیل آن به یون یک‌بار مثبت.',
+    icon: 'flash-outline',
   },
   {
     titleFa: 'خانواده‌ها و گروه‌های شیمیایی',
+    titleEn: 'Chemical Families & Groups',
     bodyFa:
-      'عناصر هم‌گروه (ستون‌های عمودی جدول) دارای تعداد الکترون‌های ظرفیت یکسان بوده و به همین دلیل خواص شیمیایی و رفتار واکنشی مشابهی دارند.',
+      'عناصر هم‌گروه (ستون‌های عمودی جدول تناوبی) دارای تعداد الکترون‌های لایه ظرفیت یکسان بوده و به همین دلیل الگوهای واکنشی و خواص شیمیایی مشابهی بروز می‌دهند.',
+    icon: 'shapes-outline',
   },
 ];
 
 export default function ToolsScreen() {
   const router = useRouter();
+  const theme = useTheme();
   const { preference, setPreference } = useAppTheme();
   const [activeTab, setActiveTab] = useState<ToolTab>('calculator');
 
   return (
     <ScreenContainer scrollable>
-      {/* Top Bar */}
+      {/* Top Header Bar */}
       <View style={styles.topBar}>
         <TouchableOpacity
-          style={styles.backBtn}
+          style={[
+            styles.backBtn,
+            {
+              backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.08)' : theme.colors.lightGreen,
+              borderColor: theme.colors.border,
+            },
+          ]}
           onPress={() => router.replace('/')}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-forward-outline" size={18} color={lightAppTheme.colors.forestGreen} />
-          <Text style={styles.backText}>جدول تناوبی</Text>
+          <Ionicons
+            name="arrow-forward-outline"
+            size={16}
+            color={theme.colors.forestGreen}
+          />
+          <Text style={[styles.backText, { color: theme.colors.forestGreen }]}>
+            جدول تناوبی
+          </Text>
         </TouchableOpacity>
 
-        <Text style={styles.screenTitle}>ابزارها و دانش‌نامه شیمی</Text>
+        <View style={styles.titleWrap}>
+          <Text style={[styles.screenTitle, { color: theme.colors.primaryText }]}>
+            جعبه‌ابزار و دانش‌نامه شیمی
+          </Text>
+          <Text style={[styles.screenSubtitle, { color: theme.colors.secondaryText }]}>
+            محاسبات، نمودارهای تحلیلی و تعاریف علمی
+          </Text>
+        </View>
+
+        <View style={{ width: 40 }} />
       </View>
 
-      {/* Segment Tab Controls */}
-      <View style={styles.tabsRow}>
-        <TouchableOpacity
-          style={[styles.tabBtn, activeTab === 'calculator' && styles.tabBtnActive]}
-          onPress={() => setActiveTab('calculator')}
+      {/* Responsive Horizontal Scrollable Tabs */}
+      <View style={styles.tabsContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tabsScroll}
         >
-          <Ionicons
-            name="calculator-outline"
-            size={16}
-            color={activeTab === 'calculator' ? '#FFFFFF' : lightAppTheme.colors.forestGreen}
-          />
-          <Text style={[styles.tabBtnText, activeTab === 'calculator' && styles.tabBtnTextActive]}>
-            جرم مولی
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tabBtn, activeTab === 'trends' && styles.tabBtnActive]}
-          onPress={() => setActiveTab('trends')}
-        >
-          <Ionicons
-            name="trending-up-outline"
-            size={16}
-            color={activeTab === 'trends' ? '#FFFFFF' : lightAppTheme.colors.forestGreen}
-          />
-          <Text style={[styles.tabBtnText, activeTab === 'trends' && styles.tabBtnTextActive]}>
-            روندهای تناوبی
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tabBtn, activeTab === 'glossary' && styles.tabBtnActive]}
-          onPress={() => setActiveTab('glossary')}
-        >
-          <Ionicons
-            name="book-outline"
-            size={16}
-            color={activeTab === 'glossary' ? '#FFFFFF' : lightAppTheme.colors.forestGreen}
-          />
-          <Text style={[styles.tabBtnText, activeTab === 'glossary' && styles.tabBtnTextActive]}>
-            دانش‌نامه
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tabBtn, activeTab === 'settings' && styles.tabBtnActive]}
-          onPress={() => setActiveTab('settings')}
-        >
-          <Ionicons
-            name="color-palette-outline"
-            size={16}
-            color={activeTab === 'settings' ? '#FFFFFF' : lightAppTheme.colors.forestGreen}
-          />
-          <Text style={[styles.tabBtnText, activeTab === 'settings' && styles.tabBtnTextActive]}>
-            پوسته
-          </Text>
-        </TouchableOpacity>
+          {TOOL_TABS.map((tab) => {
+            const active = activeTab === tab.id;
+            return (
+              <TouchableOpacity
+                key={tab.id}
+                style={[
+                  styles.tabChip,
+                  active
+                    ? [styles.tabChipActive, { backgroundColor: theme.colors.scientificGreen }]
+                    : {
+                        backgroundColor: theme.isDark
+                          ? 'rgba(255, 255, 255, 0.06)'
+                          : '#F1F5F9',
+                        borderColor: theme.colors.border,
+                      },
+                ]}
+                activeOpacity={0.75}
+                onPress={() => setActiveTab(tab.id)}
+              >
+                <Ionicons
+                  name={tab.icon as any}
+                  size={16}
+                  color={active ? '#FFFFFF' : theme.colors.forestGreen}
+                />
+                <Text
+                  style={[
+                    styles.tabChipText,
+                    { color: active ? '#FFFFFF' : theme.colors.primaryText },
+                  ]}
+                >
+                  {tab.titleFa}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       </View>
 
       {/* Tab 1: Molar Mass Calculator */}
@@ -133,13 +173,54 @@ export default function ToolsScreen() {
       {/* Tab 3: Chemistry Educational Glossary */}
       {activeTab === 'glossary' && (
         <View style={styles.glossaryList}>
+          <View style={styles.glossaryIntro}>
+            <Ionicons name="book" size={18} color={theme.colors.scientificGreen} />
+            <Text style={[styles.glossaryIntroTitle, { color: theme.colors.primaryText }]}>
+              مفاهیم و اصطلاحات کلیدی شیمی جدول تناوبی
+            </Text>
+          </View>
+
           {GLOSSARY_ITEMS.map((item, idx) => (
-            <View key={idx} style={styles.glossaryCard}>
-              <View style={styles.glossaryHeader}>
-                <Ionicons name="sparkles" size={16} color={lightAppTheme.colors.scientificGreen} />
-                <Text style={styles.glossaryTitle}>{item.titleFa}</Text>
+            <View
+              key={idx}
+              style={[
+                styles.glossaryCard,
+                {
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.border,
+                },
+              ]}
+            >
+              <View style={styles.glossaryCardHeader}>
+                <View
+                  style={[
+                    styles.glossaryIconBox,
+                    {
+                      backgroundColor: theme.isDark
+                        ? 'rgba(38, 125, 104, 0.2)'
+                        : theme.colors.lightGreen,
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name={item.icon as any}
+                    size={18}
+                    color={theme.colors.scientificGreen}
+                  />
+                </View>
+                <View style={styles.glossaryTitleCol}>
+                  <Text style={[styles.glossaryTitleFa, { color: theme.colors.primaryText }]}>
+                    {item.titleFa}
+                  </Text>
+                  <Text style={[styles.glossaryTitleEn, { color: theme.colors.secondaryText }]}>
+                    {item.titleEn}
+                  </Text>
+                </View>
               </View>
-              <Text style={styles.glossaryBody}>{item.bodyFa}</Text>
+
+              <Text style={[styles.glossaryBody, { color: theme.colors.primaryText }]}>
+                {item.bodyFa}
+              </Text>
             </View>
           ))}
         </View>
@@ -147,73 +228,162 @@ export default function ToolsScreen() {
 
       {/* Tab 4: Theme Settings & About */}
       {activeTab === 'settings' && (
-        <View style={{ gap: 14 }}>
-          {/* Brand Card with Logo */}
-          <View style={styles.aboutCard}>
-            <Image
-              source={require('../../assets/logo.png')}
-              style={styles.brandLogo}
-              resizeMode="contain"
-            />
-            <Text style={styles.aboutSubtitle}>
-              سامانه دانش‌نامه و مرجع ۱۱۸ عنصر جدول تناوبی شیمی
-            </Text>
-            <View style={styles.badgeRow}>
-              <View style={styles.versionBadge}>
-                <Text style={styles.versionText}>نسخه ۱.۰.۰ • کاملاً آفلاین</Text>
-              </View>
+        <View style={styles.settingsContainer}>
+          {/* Theme Preference Card */}
+          <View
+            style={[
+              styles.settingsCard,
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+              },
+            ]}
+          >
+            <View style={styles.settingsHeaderRow}>
+              <Ionicons name="color-palette" size={18} color={theme.colors.forestGreen} />
+              <Text style={[styles.settingsTitle, { color: theme.colors.primaryText }]}>
+                پوسته ظاهری برنامه (Theme)
+              </Text>
             </View>
-
-            <TouchableOpacity
-              style={styles.creatorLinkBtn}
-              activeOpacity={0.8}
-              onPress={() => router.push('/creator' as any)}
-            >
-              <Ionicons name="person-circle-outline" size={18} color="#FFFFFF" />
-              <Text style={styles.creatorLinkText}>درباره سازنده برنامه (Aliyaser Mousavi)</Text>
-              <Ionicons name="chevron-back" size={16} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.settingsCard}>
-            <Text style={styles.settingsTitle}>انتخاب پوسته ظاهری برنامه</Text>
-            <Text style={styles.settingsSubtitle}>
+            <Text style={[styles.settingsSubtitle, { color: theme.colors.secondaryText }]}>
               حالت تیره برای مطالعه آسان‌تر در نور کم و صرفه‌جویی باتری در نمایشگرهای AMOLED:
             </Text>
 
             <View style={styles.themeOptions}>
               {[
-                { id: 'light', label: 'روشن (روز)', icon: 'sunny-outline' },
-                { id: 'dark', label: 'تیره (شب)', icon: 'moon-outline' },
-                { id: 'system', label: 'پیروی از سامانه گوشی', icon: 'phone-portrait-outline' },
+                {
+                  id: 'light',
+                  labelFa: 'روشن (روز)',
+                  descFa: 'طراحی علمی با زمینه روشن و کنتراست شفاف',
+                  icon: 'sunny-outline',
+                },
+                {
+                  id: 'dark',
+                  labelFa: 'تیره (شب)',
+                  descFa: 'کاهش خستگی چشم و مصرف انرژی در تاریکی',
+                  icon: 'moon-outline',
+                },
+                {
+                  id: 'system',
+                  labelFa: 'خودکار (پیروی از سامانه)',
+                  descFa: 'همگام‌سازی پیوسته با وضعیت روشنایی سیستم عامل',
+                  icon: 'phone-portrait-outline',
+                },
               ].map((opt) => {
                 const active = preference === opt.id;
                 return (
                   <TouchableOpacity
                     key={opt.id}
-                    style={[styles.themeOptionRow, active && styles.themeOptionRowActive]}
+                    style={[
+                      styles.themeOptionRow,
+                      active
+                        ? [
+                            styles.themeOptionRowActive,
+                            {
+                              borderColor: theme.colors.scientificGreen,
+                              backgroundColor: theme.isDark
+                                ? 'rgba(38, 125, 104, 0.18)'
+                                : '#F0F9F5',
+                            },
+                          ]
+                        : {
+                            backgroundColor: theme.isDark
+                              ? 'rgba(255, 255, 255, 0.04)'
+                              : '#F8FAFC',
+                            borderColor: theme.colors.border,
+                          },
+                    ]}
+                    activeOpacity={0.75}
                     onPress={() => setPreference(opt.id as ThemePreference)}
                   >
-                    <Ionicons
-                      name={opt.icon as any}
-                      size={20}
-                      color={active ? lightAppTheme.colors.scientificGreen : lightAppTheme.colors.secondaryText}
-                    />
-                    <Text style={[styles.themeOptionText, active && styles.themeOptionTextActive]}>
-                      {opt.label}
-                    </Text>
-                    {active && (
+                    <View
+                      style={[
+                        styles.themeIconBox,
+                        {
+                          backgroundColor: active
+                            ? theme.colors.scientificGreen
+                            : theme.isDark
+                            ? 'rgba(255, 255, 255, 0.08)'
+                            : '#E2E8F0',
+                        },
+                      ]}
+                    >
                       <Ionicons
-                        name="checkmark-circle"
-                        size={18}
-                        color={lightAppTheme.colors.scientificGreen}
-                        style={{ marginRight: 'auto' }}
+                        name={opt.icon as any}
+                        size={20}
+                        color={active ? '#FFFFFF' : theme.colors.secondaryText}
                       />
-                    )}
+                    </View>
+
+                    <View style={styles.themeInfoCol}>
+                      <Text style={[styles.themeOptionText, { color: theme.colors.primaryText }]}>
+                        {opt.labelFa}
+                      </Text>
+                      <Text style={[styles.themeOptionDesc, { color: theme.colors.secondaryText }]}>
+                        {opt.descFa}
+                      </Text>
+                    </View>
+
+                    <View style={styles.checkWrap}>
+                      <Ionicons
+                        name={active ? 'checkmark-circle' : 'ellipse-outline'}
+                        size={20}
+                        color={active ? theme.colors.scientificGreen : theme.colors.secondaryText}
+                      />
+                    </View>
                   </TouchableOpacity>
                 );
               })}
             </View>
+          </View>
+
+          {/* Brand & Creator Card */}
+          <View
+            style={[
+              styles.aboutCard,
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+              },
+            ]}
+          >
+            <Image
+              source={require('../../assets/logo.png')}
+              style={styles.brandLogo}
+              resizeMode="contain"
+            />
+            <Text style={[styles.aboutSubtitle, { color: theme.colors.secondaryText }]}>
+              سامانه مرجع و دانش‌نامه ۱۱۸ عنصر جدول تناوبی شیمی
+            </Text>
+            <View style={styles.badgeRow}>
+              <View
+                style={[
+                  styles.versionBadge,
+                  {
+                    backgroundColor: theme.isDark
+                      ? 'rgba(38, 125, 104, 0.2)'
+                      : theme.colors.lightGreen,
+                    borderColor: theme.colors.border,
+                  },
+                ]}
+              >
+                <Text style={[styles.versionText, { color: theme.colors.forestGreen }]}>
+                  نسخه ۱.۰.۰ • کاملاً آفلاین
+                </Text>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.creatorLinkBtn, { backgroundColor: theme.colors.forestGreen }]}
+              activeOpacity={0.8}
+              onPress={() => router.push('/creator' as any)}
+            >
+              <Ionicons name="person-circle-outline" size={18} color="#FFFFFF" />
+              <Text style={styles.creatorLinkText}>
+                درباره سازنده برنامه (Aliyaser Mousavi)
+              </Text>
+              <Ionicons name="chevron-back" size={16} color="#FFFFFF" />
+            </TouchableOpacity>
           </View>
         </View>
       )}
@@ -228,109 +398,194 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
     paddingBottom: 6,
   },
   backBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: lightAppTheme.colors.lightGreen,
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 6,
     borderRadius: 8,
+    borderWidth: 1,
   },
   backText: {
     fontSize: 11.5,
-    fontFamily: lightAppTheme.fontFamily.persianSemiBold,
-    color: lightAppTheme.colors.forestGreen,
+    fontFamily: 'Vazirmatn-Bold',
+  },
+  titleWrap: {
+    alignItems: 'center',
   },
   screenTitle: {
-    fontSize: 14.5,
-    fontFamily: lightAppTheme.fontFamily.persianBold,
-    color: lightAppTheme.colors.primaryText,
+    fontSize: 15,
+    fontFamily: 'Vazirmatn-Bold',
   },
-  tabsRow: {
-    flexDirection: 'row',
-    backgroundColor: '#F1F5F9',
-    borderRadius: lightAppTheme.borderRadius.sm,
-    padding: 3,
+  screenSubtitle: {
+    fontSize: 10.5,
+    fontFamily: 'Vazirmatn-Regular',
+    marginTop: 1,
+  },
+  tabsContainer: {
     marginBottom: 12,
-    gap: 4,
   },
-  tabBtn: {
-    flex: 1,
+  tabsScroll: {
+    flexDirection: 'row',
+    gap: 6,
+    paddingVertical: 2,
+  },
+  tabChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 7,
-    borderRadius: 6,
-    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 6,
   },
-  tabBtnActive: {
-    backgroundColor: lightAppTheme.colors.scientificGreen,
+  tabChipActive: {
+    borderColor: 'transparent',
   },
-  tabBtnText: {
-    fontSize: 10.5,
-    fontFamily: lightAppTheme.fontFamily.persianMedium,
-    color: lightAppTheme.colors.forestGreen,
-  },
-  tabBtnTextActive: {
-    color: '#FFFFFF',
-    fontFamily: lightAppTheme.fontFamily.persianBold,
+  tabChipText: {
+    fontSize: 11.5,
+    fontFamily: 'Vazirmatn-Bold',
   },
   glossaryList: {
     gap: 10,
   },
-  glossaryCard: {
-    backgroundColor: lightAppTheme.colors.surface,
-    borderRadius: lightAppTheme.borderRadius.md,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: lightAppTheme.colors.border,
-  },
-  glossaryHeader: {
+  glossaryIntro: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 6,
+    marginBottom: 2,
   },
-  glossaryTitle: {
+  glossaryIntroTitle: {
     fontSize: 13,
-    fontFamily: lightAppTheme.fontFamily.persianBold,
-    color: lightAppTheme.colors.forestGreen,
+    fontFamily: 'Vazirmatn-Bold',
+  },
+  glossaryCard: {
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  glossaryCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  glossaryIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  glossaryTitleCol: {
+    flex: 1,
+  },
+  glossaryTitleFa: {
+    fontSize: 13.5,
+    fontFamily: 'Vazirmatn-Bold',
+  },
+  glossaryTitleEn: {
+    fontSize: 11,
+    fontFamily: 'System',
+    marginTop: 1,
   },
   glossaryBody: {
-    fontSize: 12,
-    fontFamily: lightAppTheme.fontFamily.persianRegular,
-    color: lightAppTheme.colors.primaryText,
+    fontSize: 11.5,
+    fontFamily: 'Vazirmatn-Regular',
     lineHeight: 20,
     textAlign: 'justify',
   },
+  settingsContainer: {
+    gap: 14,
+  },
   settingsCard: {
-    backgroundColor: lightAppTheme.colors.surface,
-    borderRadius: lightAppTheme.borderRadius.md,
-    padding: 14,
+    borderRadius: 14,
+    padding: 16,
     borderWidth: 1,
-    borderColor: lightAppTheme.colors.border,
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  settingsHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  settingsTitle: {
+    fontSize: 14,
+    fontFamily: 'Vazirmatn-Bold',
+  },
+  settingsSubtitle: {
+    fontSize: 11.5,
+    fontFamily: 'Vazirmatn-Regular',
+    lineHeight: 18,
+    marginBottom: 6,
+  },
+  themeOptions: {
+    gap: 10,
+  },
+  themeOptionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1.5,
+    gap: 12,
+  },
+  themeOptionRowActive: {},
+  themeIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  themeInfoCol: {
+    flex: 1,
+  },
+  themeOptionText: {
+    fontSize: 13,
+    fontFamily: 'Vazirmatn-Bold',
+  },
+  themeOptionDesc: {
+    fontSize: 10.5,
+    fontFamily: 'Vazirmatn-Regular',
+    marginTop: 2,
+  },
+  checkWrap: {
+    marginLeft: 4,
   },
   aboutCard: {
-    backgroundColor: lightAppTheme.colors.surface,
-    borderRadius: lightAppTheme.borderRadius.md,
+    borderRadius: 14,
     padding: 18,
     borderWidth: 1,
-    borderColor: lightAppTheme.colors.border,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
   },
   brandLogo: {
     width: 220,
-    height: 70,
+    height: 64,
     marginBottom: 8,
   },
   aboutSubtitle: {
-    fontSize: 12,
-    fontFamily: lightAppTheme.fontFamily.persianRegular,
-    color: lightAppTheme.colors.secondaryText,
+    fontSize: 11.5,
+    fontFamily: 'Vazirmatn-Regular',
     textAlign: 'center',
     marginBottom: 10,
   },
@@ -338,70 +593,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   versionBadge: {
-    backgroundColor: lightAppTheme.colors.lightGreen,
     paddingHorizontal: 10,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: lightAppTheme.colors.border,
   },
   versionText: {
     fontSize: 11,
-    fontFamily: lightAppTheme.fontFamily.persianMedium,
-    color: lightAppTheme.colors.forestGreen,
+    fontFamily: 'Vazirmatn-Medium',
   },
   creatorLinkBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: lightAppTheme.colors.forestGreen,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 8,
-    marginTop: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginTop: 14,
   },
   creatorLinkText: {
     fontSize: 11.5,
-    fontFamily: lightAppTheme.fontFamily.persianSemiBold,
+    fontFamily: 'Vazirmatn-Bold',
     color: '#FFFFFF',
   },
-  settingsTitle: {
-    fontSize: 14,
-    fontFamily: lightAppTheme.fontFamily.persianBold,
-    color: lightAppTheme.colors.forestGreen,
-  },
-  settingsSubtitle: {
-    fontSize: 11.5,
-    fontFamily: lightAppTheme.fontFamily.persianRegular,
-    color: lightAppTheme.colors.secondaryText,
-    marginTop: 4,
-    marginBottom: 12,
-  },
-  themeOptions: {
-    gap: 8,
-  },
-  themeOptionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F8FAFC',
-    borderRadius: 8,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    gap: 10,
-  },
-  themeOptionRowActive: {
-    borderColor: lightAppTheme.colors.scientificGreen,
-    backgroundColor: '#F0F9F5',
-  },
-  themeOptionText: {
-    fontSize: 12.5,
-    fontFamily: lightAppTheme.fontFamily.persianMedium,
-    color: lightAppTheme.colors.primaryText,
-  },
-  themeOptionTextActive: {
-    color: lightAppTheme.colors.scientificGreen,
-    fontFamily: lightAppTheme.fontFamily.persianBold,
-  },
 });
-

@@ -1,8 +1,10 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { ELEMENT_CATEGORIES } from '@/constants/element-categories';
 import { useTheme } from '@/theme';
 import { ElementCategory } from '@/types';
+import { toPersianDigits } from '@/utils/rtl';
 
 export interface PeriodicLegendProps {
   selectedCategory: ElementCategory | null;
@@ -19,35 +21,65 @@ export const PeriodicLegend: React.FC<PeriodicLegendProps> = ({
 
   return (
     <View style={styles.container}>
+      {/* Header Row: Title & Optional Clear Filter Action */}
       <View style={styles.headerRow}>
-        <Text
-          style={[
-            theme.typography.caption,
-            { color: theme.colors.secondaryText, fontFamily: theme.fontFamily.persianBold },
-          ]}
-        >
-          فیلتر خانواده عناصر شیمیایی:
-        </Text>
+        <View style={styles.headerTitleRow}>
+          <Ionicons
+            name="color-filter-outline"
+            size={14}
+            color={theme.colors.scientificGreen}
+          />
+          <Text
+            style={[
+              styles.headerTitle,
+              {
+                color: theme.colors.primaryText,
+                fontFamily: theme.fontFamily.persianSemiBold,
+              },
+            ]}
+          >
+            خانواده‌های شیمیایی
+          </Text>
+        </View>
+
         {selectedCategory ? (
           <TouchableOpacity
             onPress={() => onSelectCategory(null)}
-            style={[styles.clearBtn, { backgroundColor: theme.colors.lightGreen }]}
+            style={[
+              styles.clearBtn,
+              {
+                backgroundColor: theme.isDark ? `${theme.colors.scientificGreen}20` : theme.colors.lightGreen,
+              },
+            ]}
+            activeOpacity={theme.interactive.activeOpacity}
+            accessibilityRole="button"
+            accessibilityLabel="پاک کردن فیلتر و نمایش همه عناصر"
           >
+            <Ionicons
+              name="close-circle-outline"
+              size={13}
+              color={theme.colors.scientificGreen}
+            />
             <Text
               style={[
-                theme.typography.caption,
-                { color: theme.colors.scientificGreen, fontSize: 11 },
+                styles.clearBtnText,
+                {
+                  color: theme.colors.scientificGreen,
+                  fontFamily: theme.fontFamily.persianBold,
+                },
               ]}
             >
-              پاک‌کردن فیلتر (نمایش همه)
+              نمایش همه ({toPersianDigits(118)})
             </Text>
           </TouchableOpacity>
         ) : null}
       </View>
 
+      {/* Horizontal Scrollable Category Chips */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        nestedScrollEnabled={true}
         contentContainerStyle={styles.scrollList}
       >
         {Object.values(ELEMENT_CATEGORIES).map((cat) => {
@@ -63,42 +95,53 @@ export const PeriodicLegend: React.FC<PeriodicLegendProps> = ({
                 {
                   backgroundColor: isSelected
                     ? `${cat.color}22`
-                    : theme.colors.surface,
-                  borderColor: isSelected ? cat.color : theme.colors.border,
-                  borderWidth: isSelected ? 1.8 : 1,
+                    : theme.colors.card,
+                  borderColor: isSelected ? cat.color : theme.colors.cardBorder,
+                  borderWidth: isSelected ? 1.6 : 1,
                   borderRadius: theme.borderRadius.full,
                 },
               ]}
+              activeOpacity={theme.interactive.activeOpacity}
               accessibilityRole="button"
-              accessibilityLabel={`${cat.nameFa} (${count} عنصر)`}
+              accessibilityLabel={`${cat.nameFa}، ${count} عنصر`}
+              accessibilityState={{ selected: isSelected }}
             >
               <View style={[styles.dot, { backgroundColor: cat.color }]} />
               <Text
                 style={[
-                  theme.typography.caption,
+                  styles.chipText,
                   {
                     color: isSelected ? theme.colors.primaryText : theme.colors.secondaryText,
                     fontFamily: isSelected
                       ? theme.fontFamily.persianBold
                       : theme.fontFamily.persianMedium,
-                    fontSize: 11,
                   },
                 ]}
               >
                 {cat.nameFa}
               </Text>
-              <Text
+              <View
                 style={[
-                  theme.typography.caption,
                   styles.countBadge,
                   {
-                    color: isSelected ? cat.color : theme.colors.secondaryText,
-                    fontSize: 10,
+                    backgroundColor: isSelected
+                      ? `${cat.color}35`
+                      : theme.isDark ? theme.colors.surfaceElevated : theme.colors.surfaceMuted,
                   },
                 ]}
               >
-                ({count})
-              </Text>
+                <Text
+                  style={[
+                    styles.countBadgeText,
+                    {
+                      color: isSelected ? cat.color : theme.colors.secondaryText,
+                      fontFamily: theme.fontFamily.persianRegular,
+                    },
+                  ]}
+                >
+                  {toPersianDigits(count)}
+                </Text>
+              </View>
             </TouchableOpacity>
           );
         })}
@@ -109,40 +152,65 @@ export const PeriodicLegend: React.FC<PeriodicLegendProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 8,
+    marginVertical: 4,
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
-    paddingHorizontal: 4,
+    marginBottom: 6,
+    paddingHorizontal: 16,
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  headerTitle: {
+    fontSize: 12,
+    lineHeight: 16,
   },
   clearBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: 12,
+  },
+  clearBtnText: {
+    fontSize: 10.5,
   },
   scrollList: {
     flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 2,
-    paddingBottom: 4,
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingBottom: 2,
   },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    minHeight: 30,
   },
   dot: {
-    width: 9,
-    height: 9,
-    borderRadius: 4.5,
-    marginEnd: 6,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    marginEnd: 5,
+  },
+  chipText: {
+    fontSize: 11,
+    lineHeight: 15,
   },
   countBadge: {
-    marginStart: 4,
+    marginStart: 5,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 6,
+  },
+  countBadgeText: {
+    fontSize: 9.5,
   },
 });
-

@@ -45,6 +45,7 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
       ]}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
+      nestedScrollEnabled={true}
     >
       {children}
     </ScrollView>

@@ -41,10 +41,24 @@ export const TYPOGRAPHY_SCALE: TypographyScale = {
     fontWeight: '600',
     writingDirection: 'rtl',
   },
+  titleMedium: {
+    fontFamily: FONT_FAMILY.persianSemiBold,
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: '600',
+    writingDirection: 'rtl',
+  },
+  subtitle: {
+    fontFamily: FONT_FAMILY.persianMedium,
+    fontSize: 13,
+    lineHeight: 20,
+    fontWeight: '500',
+    writingDirection: 'rtl',
+  },
   bodyLarge: {
     fontFamily: FONT_FAMILY.persianRegular,
     fontSize: 16,
-    lineHeight: 24,
+    lineHeight: 25,
     fontWeight: '400',
     writingDirection: 'rtl',
   },
@@ -62,11 +76,32 @@ export const TYPOGRAPHY_SCALE: TypographyScale = {
     fontWeight: '400',
     writingDirection: 'rtl',
   },
+  buttonLabel: {
+    fontFamily: FONT_FAMILY.persianMedium,
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '500',
+    writingDirection: 'rtl',
+  },
+  chipLabel: {
+    fontFamily: FONT_FAMILY.persianMedium,
+    fontSize: 11,
+    lineHeight: 16,
+    fontWeight: '500',
+    writingDirection: 'rtl',
+  },
   caption: {
     fontFamily: FONT_FAMILY.persianMedium,
     fontSize: 11,
     lineHeight: 16,
     fontWeight: '500',
+    writingDirection: 'rtl',
+  },
+  overline: {
+    fontFamily: FONT_FAMILY.persianSemiBold,
+    fontSize: 10,
+    lineHeight: 14,
+    fontWeight: '600',
     writingDirection: 'rtl',
   },
   elementSymbol: {
@@ -99,4 +134,3 @@ export const TYPOGRAPHY_SCALE: TypographyScale = {
     writingDirection: 'ltr',
   },
 };
-

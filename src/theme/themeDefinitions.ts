@@ -4,9 +4,12 @@ import {
   ELEMENT_CATEGORIES,
   ELEMENT_FAMILY_COLORS,
   FONT_FAMILY,
+  ICON_SIZE,
+  INTERACTIVE,
   LAYOUT,
   LIGHT_THEME,
   PRIMARY_PALETTE,
+  SHADOWS,
   SPACING,
   TYPOGRAPHY_SCALE,
 } from '@/constants';
@@ -20,6 +23,9 @@ export interface AppTheme {
   borderRadius: typeof BORDER_RADIUS;
   layout: typeof LAYOUT;
   fontFamily: typeof FONT_FAMILY;
+  iconSize: typeof ICON_SIZE;
+  shadows: typeof SHADOWS;
+  interactive: typeof INTERACTIVE;
 }
 
 export const lightAppTheme: AppTheme = {
@@ -30,6 +36,9 @@ export const lightAppTheme: AppTheme = {
   borderRadius: BORDER_RADIUS,
   layout: LAYOUT,
   fontFamily: FONT_FAMILY,
+  iconSize: ICON_SIZE,
+  shadows: SHADOWS,
+  interactive: INTERACTIVE,
 };
 
 export const darkAppTheme: AppTheme = {
@@ -40,6 +49,9 @@ export const darkAppTheme: AppTheme = {
   borderRadius: BORDER_RADIUS,
   layout: LAYOUT,
   fontFamily: FONT_FAMILY,
+  iconSize: ICON_SIZE,
+  shadows: SHADOWS,
+  interactive: INTERACTIVE,
 };
 
 export {
@@ -48,10 +60,12 @@ export {
   ELEMENT_CATEGORIES,
   ELEMENT_FAMILY_COLORS,
   FONT_FAMILY,
+  ICON_SIZE,
+  INTERACTIVE,
   LAYOUT,
   LIGHT_THEME,
   PRIMARY_PALETTE,
+  SHADOWS,
   SPACING,
   TYPOGRAPHY_SCALE,
 };
-

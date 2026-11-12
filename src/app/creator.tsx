@@ -1,21 +1,20 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  TouchableOpacity,
-  ScrollView,
-  Linking,
-  Modal,
-  Alert,
-  Platform,
-} from 'react-native';
-import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import {
+  Alert,
+  Image,
+  Linking,
+  Modal,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { ScreenContainer } from '../components';
-import { lightAppTheme } from '../theme';
+import { useTheme } from '../theme';
 
 interface ContactItem {
   id: string;
@@ -73,7 +72,7 @@ const CREATOR_CONTACTS: ContactItem[] = [
     value: 'github.com/Aliyaser-Mousavi',
     icon: 'logo-github',
     url: 'https://github.com/Aliyaser-Mousavi',
-    color: '#1F2937',
+    color: '#374151',
   },
 ];
 
@@ -89,6 +88,7 @@ const TECH_BADGES = [
 
 export default function CreatorScreen() {
   const router = useRouter();
+  const theme = useTheme();
   const [photoModalVisible, setPhotoModalVisible] = useState(false);
 
   const handleOpenLink = async (url: string, label: string) => {
@@ -119,94 +119,209 @@ export default function CreatorScreen() {
       {/* Top Header Bar */}
       <View style={styles.topBar}>
         <TouchableOpacity
-          style={styles.backBtn}
+          style={[
+            styles.backBtn,
+            {
+              backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.08)' : theme.colors.lightGreen,
+              borderColor: theme.colors.border,
+            },
+          ]}
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-forward-outline" size={18} color={lightAppTheme.colors.forestGreen} />
-          <Text style={styles.backText}>بازگشت</Text>
+          <Ionicons
+            name="arrow-forward-outline"
+            size={16}
+            color={theme.colors.forestGreen}
+          />
+          <Text style={[styles.backText, { color: theme.colors.forestGreen }]}>
+            بازگشت
+          </Text>
         </TouchableOpacity>
 
-        <Text style={styles.screenTitle}>درباره سازنده برنامه</Text>
+        <Text style={[styles.screenTitle, { color: theme.colors.primaryText }]}>
+          شناسنامه سازنده و پروژه
+        </Text>
+
+        <View style={{ width: 40 }} />
       </View>
 
       {/* 1. Hero Profile Card */}
-      <View style={styles.profileCard}>
+      <View
+        style={[
+          styles.profileCard,
+          {
+            backgroundColor: theme.colors.surface,
+            borderColor: theme.colors.border,
+          },
+        ]}
+      >
+        {/* Avatar with Zoom Hint Badge */}
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={handlePhotoPress}
           style={styles.avatarWrapper}
+          accessibilityLabel="مشاهده تصویر سازنده در اندازه بزرگ"
         >
           <Image
             source={require('../../assets/ceator.jpg')}
-            style={styles.avatarImage}
+            style={[styles.avatarImage, { borderColor: theme.colors.scientificGreen }]}
             resizeMode="cover"
           />
-          <View style={styles.zoomHintBadge}>
+          <View
+            style={[
+              styles.zoomHintBadge,
+              { backgroundColor: theme.colors.forestGreen },
+            ]}
+          >
             <Ionicons name="scan-outline" size={13} color="#FFFFFF" />
           </View>
         </TouchableOpacity>
 
-        <Text style={styles.creatorNameEn}>Aliyaser Mousavi</Text>
-        <Text style={styles.creatorTitleEn}>App Designer & Developer</Text>
+        <Text style={[styles.creatorNameEn, { color: theme.colors.primaryText }]}>
+          Aliyaser Mousavi
+        </Text>
+        <Text style={[styles.creatorTitleEn, { color: theme.colors.secondaryText }]}>
+          App Designer & Developer
+        </Text>
 
-        <View style={styles.roleBadge}>
-          <Ionicons name="code-slash" size={14} color={lightAppTheme.colors.forestGreen} />
-          <Text style={styles.roleBadgeText}>طراح و توسعه‌دهنده نرم‌افزار</Text>
+        {/* Persian Role Pill */}
+        <View
+          style={[
+            styles.roleBadge,
+            {
+              backgroundColor: theme.isDark
+                ? 'rgba(38, 125, 104, 0.2)'
+                : theme.colors.lightGreen,
+            },
+          ]}
+        >
+          <Ionicons name="code-slash" size={14} color={theme.colors.forestGreen} />
+          <Text style={[styles.roleBadgeText, { color: theme.colors.forestGreen }]}>
+            طراح و توسعه‌دهنده نرم‌افزار
+          </Text>
         </View>
 
-        <Text style={styles.bioText}>
+        <Text style={[styles.bioText, { color: theme.colors.primaryText }]}>
           توسعه‌دهنده متعهد نرم‌افزارهای مدرن آموزشی و علمی. برنامه Mars Element با هدف ارائه تجربه‌ای
           بومی، کاملاً آفلاین، سریع و استاندارد برای دانش‌آموزان و پژوهشگران شیمی طراحی و پیاده‌سازی شده است.
         </Text>
       </View>
 
       {/* 2. School Chemistry Project Attribution */}
-      <View style={styles.sectionCard}>
-        <View style={styles.sectionHeader}>
-          <Ionicons name="school-outline" size={18} color={lightAppTheme.colors.forestGreen} />
-          <Text style={styles.sectionTitle}>شناسنامه پروژه درسی و آموزشی</Text>
+      <View
+        style={[
+          styles.sectionCard,
+          {
+            backgroundColor: theme.colors.surface,
+            borderColor: theme.colors.border,
+          },
+        ]}
+      >
+        <View style={[styles.sectionHeader, { borderBottomColor: theme.colors.border }]}>
+          <Ionicons name="school-outline" size={18} color={theme.colors.forestGreen} />
+          <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>
+            شناسنامه پروژه درسی و آموزشی
+          </Text>
         </View>
 
-        <Text style={styles.projectIntro}>
+        <Text style={[styles.projectIntro, { color: theme.colors.secondaryText }]}>
           پروژه علمی و نرم‌افزاری Mars Element به عنوان یک پروژه آموزشی و کاربردی در درس کیمیا طراحی و اجرا شده است:
         </Text>
 
         <View style={styles.metaGrid}>
-          <View style={styles.metaRow}>
-            <Text style={styles.metaLabel}>مکتب (مدرسه):</Text>
-            <Text style={styles.metaValue}>سیدمحمدقناد</Text>
+          <View
+            style={[
+              styles.metaRow,
+              {
+                backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8FAFC',
+                borderColor: theme.colors.border,
+              },
+            ]}
+          >
+            <Text style={[styles.metaLabel, { color: theme.colors.secondaryText }]}>
+              مکتب (مدرسه):
+            </Text>
+            <Text style={[styles.metaValue, { color: theme.colors.primaryText }]}>
+              سیدمحمدقناد
+            </Text>
           </View>
 
-          <View style={styles.metaRow}>
-            <Text style={styles.metaLabel}>مضمون درسی:</Text>
-            <Text style={styles.metaValue}>کیمیا</Text>
+          <View
+            style={[
+              styles.metaRow,
+              {
+                backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8FAFC',
+                borderColor: theme.colors.border,
+              },
+            ]}
+          >
+            <Text style={[styles.metaLabel, { color: theme.colors.secondaryText }]}>
+              مضمون درسی:
+            </Text>
+            <Text style={[styles.metaValue, { color: theme.colors.primaryText }]}>
+              کیمیا
+            </Text>
           </View>
 
-          <View style={styles.metaRow}>
-            <Text style={styles.metaLabel}>استاد راهنما:</Text>
-            <Text style={styles.metaValue}>مهدوی</Text>
+          <View
+            style={[
+              styles.metaRow,
+              {
+                backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8FAFC',
+                borderColor: theme.colors.border,
+              },
+            ]}
+          >
+            <Text style={[styles.metaLabel, { color: theme.colors.secondaryText }]}>
+              استاد راهنما:
+            </Text>
+            <Text style={[styles.metaValue, { color: theme.colors.primaryText }]}>
+              مهدوی
+            </Text>
           </View>
 
-          <View style={styles.metaRow}>
-            <Text style={styles.metaLabel}>نام پروژه:</Text>
-            <Text style={[styles.metaValue, styles.monoText]}>Mars Element</Text>
+          <View
+            style={[
+              styles.metaRow,
+              {
+                backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8FAFC',
+                borderColor: theme.colors.border,
+              },
+            ]}
+          >
+            <Text style={[styles.metaLabel, { color: theme.colors.secondaryText }]}>
+              نام نرم‌افزار:
+            </Text>
+            <Text style={[styles.metaValue, styles.monoText, { color: theme.colors.scientificGreen }]}>
+              Mars Element
+            </Text>
           </View>
         </View>
       </View>
 
-      {/* 3. Official Supporter: Mars Coders */}
-      <View style={styles.supporterCard}>
+      {/* 3. Official Supporter: Mars Coders (Clearly Distinguished) */}
+      <View
+        style={[
+          styles.supporterCard,
+          {
+            backgroundColor: theme.isDark ? 'rgba(217, 119, 6, 0.12)' : '#FFFDF5',
+            borderColor: theme.isDark ? 'rgba(217, 119, 6, 0.35)' : '#FDE68A',
+          },
+        ]}
+      >
         <View style={styles.supporterHeader}>
           <View style={styles.supporterBadge}>
             <Ionicons name="shield-checkmark" size={14} color="#D97706" />
-            <Text style={styles.supporterBadgeText}>حامی رسمی پروژه</Text>
+            <Text style={styles.supporterBadgeText}>حامی رسمی و فنی پروژه</Text>
           </View>
-          <Text style={styles.supporterOrgName}>Mars Coders</Text>
+          <Text style={[styles.supporterOrgName, { color: theme.isDark ? '#FDE68A' : '#92400E' }]}>
+            Mars Coders
+          </Text>
         </View>
 
-        <Text style={styles.supporterDesc}>
-          مجموعه Mars Coders به عنوان حامی رسمی و فنی این پروژه، در مسیر توسعه استاندارد و نشر دانش نرم‌افزاری همراه ما بوده است.
+        <Text style={[styles.supporterDesc, { color: theme.isDark ? '#FEF3C7' : '#78350F' }]}>
+          مجموعه Mars Coders به عنوان حامی رسمی و فنی این پروژه، در مسیر استانداردسازی معماری نرم‌افزار و نشر دانش فنی همراه ما بوده است.
         </Text>
 
         <View style={styles.supporterActions}>
@@ -220,28 +335,53 @@ export default function CreatorScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.supporterBtnSecondary}
+            style={[
+              styles.supporterBtnSecondary,
+              {
+                backgroundColor: theme.isDark
+                  ? 'rgba(38, 125, 104, 0.2)'
+                  : theme.colors.lightGreen,
+              },
+            ]}
             activeOpacity={0.8}
             onPress={() => handleOpenLink('mailto:info@marscoders.tech', 'ایمیل Mars Coders')}
           >
-            <Ionicons name="mail-outline" size={16} color={lightAppTheme.colors.forestGreen} />
-            <Text style={styles.supporterBtnTextSecondary}>info@marscoders.tech</Text>
+            <Ionicons name="mail-outline" size={16} color={theme.colors.forestGreen} />
+            <Text style={[styles.supporterBtnTextSecondary, { color: theme.colors.forestGreen }]}>
+              info@marscoders.tech
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {/* 4. Creator Direct Contact Cards */}
-      <View style={styles.sectionCard}>
-        <View style={styles.sectionHeader}>
-          <Ionicons name="chatbubbles-outline" size={18} color={lightAppTheme.colors.forestGreen} />
-          <Text style={styles.sectionTitle}>راه‌های ارتباطی با سازنده</Text>
+      <View
+        style={[
+          styles.sectionCard,
+          {
+            backgroundColor: theme.colors.surface,
+            borderColor: theme.colors.border,
+          },
+        ]}
+      >
+        <View style={[styles.sectionHeader, { borderBottomColor: theme.colors.border }]}>
+          <Ionicons name="chatbubbles-outline" size={18} color={theme.colors.forestGreen} />
+          <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>
+            راه‌های ارتباطی مستقیم با سازنده
+          </Text>
         </View>
 
         <View style={styles.contactList}>
           {CREATOR_CONTACTS.map((item) => (
             <TouchableOpacity
               key={item.id}
-              style={styles.contactCard}
+              style={[
+                styles.contactCard,
+                {
+                  backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8FAFC',
+                  borderColor: theme.colors.border,
+                },
+              ]}
               activeOpacity={0.7}
               onPress={() => handleOpenLink(item.url, item.titleFa)}
             >
@@ -250,29 +390,57 @@ export default function CreatorScreen() {
               </View>
 
               <View style={styles.contactInfo}>
-                <Text style={styles.contactTitle}>{item.titleFa}</Text>
-                <Text style={styles.contactValue} numberOfLines={1}>
+                <Text style={[styles.contactTitle, { color: theme.colors.primaryText }]}>
+                  {item.titleFa}
+                </Text>
+                <Text
+                  style={[styles.contactValue, { color: theme.colors.secondaryText }]}
+                  numberOfLines={1}
+                >
                   {item.value}
                 </Text>
               </View>
 
-              <Ionicons name="open-outline" size={16} color="#94A3B8" />
+              <Ionicons name="open-outline" size={16} color={theme.colors.secondaryText} />
             </TouchableOpacity>
           ))}
         </View>
       </View>
 
       {/* 5. Technology Stack Badges */}
-      <View style={styles.sectionCard}>
-        <View style={styles.sectionHeader}>
-          <Ionicons name="hardware-chip-outline" size={18} color={lightAppTheme.colors.forestGreen} />
-          <Text style={styles.sectionTitle}>فناوری‌ها و استانداردهای توسعه</Text>
+      <View
+        style={[
+          styles.sectionCard,
+          {
+            backgroundColor: theme.colors.surface,
+            borderColor: theme.colors.border,
+          },
+        ]}
+      >
+        <View style={[styles.sectionHeader, { borderBottomColor: theme.colors.border }]}>
+          <Ionicons name="hardware-chip-outline" size={18} color={theme.colors.forestGreen} />
+          <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>
+            فناوری‌ها و استانداردهای توسعه
+          </Text>
         </View>
 
         <View style={styles.badgesWrap}>
           {TECH_BADGES.map((badge, idx) => (
-            <View key={idx} style={styles.techBadge}>
-              <Text style={styles.techBadgeText}>{badge}</Text>
+            <View
+              key={idx}
+              style={[
+                styles.techBadge,
+                {
+                  backgroundColor: theme.isDark
+                    ? 'rgba(255, 255, 255, 0.06)'
+                    : '#F1F5F9',
+                  borderColor: theme.colors.border,
+                },
+              ]}
+            >
+              <Text style={[styles.techBadgeText, { color: theme.colors.primaryText }]}>
+                {badge}
+              </Text>
             </View>
           ))}
         </View>
@@ -285,11 +453,15 @@ export default function CreatorScreen() {
           style={styles.footerLogo}
           resizeMode="contain"
         />
-        <Text style={styles.footerBrand}>Mars Element</Text>
-        <Text style={styles.footerCopy}>
+        <Text style={[styles.footerBrand, { color: theme.colors.forestGreen }]}>
+          Mars Element
+        </Text>
+        <Text style={[styles.footerCopy, { color: theme.colors.secondaryText }]}>
           طراحی و توسعه توسط Aliyaser Mousavi • حامی رسمی Mars Coders
         </Text>
-        <Text style={styles.footerVersion}>نسخه ۱.۰.۰ • کاملاً آفلاین و ایمن</Text>
+        <Text style={[styles.footerVersion, { color: theme.colors.secondaryText }]}>
+          نسخه ۱.۰.۰ • کاملاً آفلاین و ایمن
+        </Text>
       </View>
 
       <View style={{ height: 40 }} />
@@ -305,6 +477,7 @@ export default function CreatorScreen() {
           <TouchableOpacity
             style={styles.modalCloseBtn}
             onPress={() => setPhotoModalVisible(false)}
+            accessibilityLabel="بستن تصویر"
           >
             <Ionicons name="close" size={26} color="#FFFFFF" />
           </TouchableOpacity>
@@ -334,96 +507,93 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: lightAppTheme.colors.lightGreen,
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 6,
     borderRadius: 8,
+    borderWidth: 1,
   },
   backText: {
     fontSize: 11.5,
-    fontFamily: lightAppTheme.fontFamily.persianSemiBold,
-    color: lightAppTheme.colors.forestGreen,
+    fontFamily: 'Vazirmatn-Bold',
   },
   screenTitle: {
     fontSize: 14.5,
-    fontFamily: lightAppTheme.fontFamily.persianBold,
-    color: lightAppTheme.colors.primaryText,
+    fontFamily: 'Vazirmatn-Bold',
   },
   profileCard: {
-    backgroundColor: lightAppTheme.colors.surface,
     borderRadius: 16,
     padding: 20,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: lightAppTheme.colors.border,
     marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 5,
+    elevation: 2,
   },
   avatarWrapper: {
     position: 'relative',
     marginBottom: 12,
   },
   avatarImage: {
-    width: 105,
-    height: 105,
-    borderRadius: 52.5,
+    width: 108,
+    height: 108,
+    borderRadius: 54,
     borderWidth: 3,
-    borderColor: lightAppTheme.colors.scientificGreen,
   },
   zoomHintBadge: {
     position: 'absolute',
     bottom: 2,
     right: 2,
-    backgroundColor: lightAppTheme.colors.forestGreen,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderColor: '#FFFFFF',
   },
   creatorNameEn: {
-    fontSize: 19,
+    fontSize: 20,
     fontFamily: 'System',
     fontWeight: 'bold',
-    color: lightAppTheme.colors.primaryText,
   },
   creatorTitleEn: {
-    fontSize: 12.5,
+    fontSize: 13,
     fontFamily: 'System',
-    color: lightAppTheme.colors.secondaryText,
     marginTop: 2,
     marginBottom: 8,
   },
   roleBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    backgroundColor: lightAppTheme.colors.lightGreen,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
     borderRadius: 8,
     marginBottom: 12,
   },
   roleBadgeText: {
-    fontSize: 11,
-    fontFamily: lightAppTheme.fontFamily.persianMedium,
-    color: lightAppTheme.colors.forestGreen,
+    fontSize: 11.5,
+    fontFamily: 'Vazirmatn-Bold',
   },
   bioText: {
     fontSize: 12,
-    fontFamily: lightAppTheme.fontFamily.persianRegular,
-    color: lightAppTheme.colors.primaryText,
-    lineHeight: 20,
+    fontFamily: 'Vazirmatn-Regular',
+    lineHeight: 21,
     textAlign: 'center',
   },
   sectionCard: {
-    backgroundColor: lightAppTheme.colors.surface,
     borderRadius: 14,
     padding: 14,
     borderWidth: 1,
-    borderColor: lightAppTheme.colors.border,
     marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -431,18 +601,15 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-    paddingBottom: 6,
+    paddingBottom: 8,
   },
   sectionTitle: {
     fontSize: 13,
-    fontFamily: lightAppTheme.fontFamily.persianBold,
-    color: lightAppTheme.colors.forestGreen,
+    fontFamily: 'Vazirmatn-Bold',
   },
   projectIntro: {
     fontSize: 11.5,
-    fontFamily: lightAppTheme.fontFamily.persianRegular,
-    color: lightAppTheme.colors.secondaryText,
+    fontFamily: 'Vazirmatn-Regular',
     lineHeight: 18,
     marginBottom: 10,
   },
@@ -453,32 +620,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 9,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
   },
   metaLabel: {
     fontSize: 11.5,
-    fontFamily: lightAppTheme.fontFamily.persianRegular,
-    color: lightAppTheme.colors.secondaryText,
+    fontFamily: 'Vazirmatn-Regular',
   },
   metaValue: {
     fontSize: 12.5,
-    fontFamily: lightAppTheme.fontFamily.persianBold,
-    color: lightAppTheme.colors.primaryText,
+    fontFamily: 'Vazirmatn-Bold',
   },
   monoText: {
     fontFamily: 'System',
+    fontWeight: 'bold',
   },
   supporterCard: {
-    backgroundColor: '#FFFDF5',
     borderRadius: 14,
     padding: 16,
     borderWidth: 1.5,
-    borderColor: '#FDE68A',
     marginBottom: 12,
   },
   supporterHeader: {
@@ -493,24 +655,22 @@ const styles = StyleSheet.create({
     gap: 4,
     backgroundColor: '#FEF3C7',
     paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingVertical: 3,
     borderRadius: 6,
   },
   supporterBadgeText: {
     fontSize: 10.5,
-    fontFamily: lightAppTheme.fontFamily.persianBold,
+    fontFamily: 'Vazirmatn-Bold',
     color: '#92400E',
   },
   supporterOrgName: {
     fontSize: 16,
     fontFamily: 'System',
     fontWeight: 'bold',
-    color: '#92400E',
   },
   supporterDesc: {
     fontSize: 11.5,
-    fontFamily: lightAppTheme.fontFamily.persianRegular,
-    color: '#78350F',
+    fontFamily: 'Vazirmatn-Regular',
     lineHeight: 19,
     marginBottom: 12,
   },
@@ -523,26 +683,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     backgroundColor: '#D97706',
-    paddingVertical: 10,
+    paddingVertical: 11,
     borderRadius: 8,
   },
   supporterBtnTextPrimary: {
     color: '#FFFFFF',
     fontSize: 12,
-    fontFamily: lightAppTheme.fontFamily.persianBold,
+    fontFamily: 'Vazirmatn-Bold',
   },
   supporterBtnSecondary: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: lightAppTheme.colors.lightGreen,
-    paddingVertical: 9,
+    paddingVertical: 10,
     borderRadius: 8,
   },
   supporterBtnTextSecondary: {
-    color: lightAppTheme.colors.forestGreen,
-    fontSize: 11.5,
+    fontSize: 12,
     fontFamily: 'System',
     fontWeight: '600',
   },
@@ -552,17 +710,15 @@ const styles = StyleSheet.create({
   contactCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
     borderRadius: 10,
     padding: 10,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
     gap: 10,
   },
   contactIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -571,13 +727,11 @@ const styles = StyleSheet.create({
   },
   contactTitle: {
     fontSize: 11.5,
-    fontFamily: lightAppTheme.fontFamily.persianBold,
-    color: lightAppTheme.colors.primaryText,
+    fontFamily: 'Vazirmatn-Bold',
   },
   contactValue: {
     fontSize: 11,
     fontFamily: 'System',
-    color: lightAppTheme.colors.secondaryText,
     marginTop: 1,
     textAlign: 'left',
   },
@@ -587,18 +741,15 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   techBadge: {
-    backgroundColor: '#F1F5F9',
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 6,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
   },
   techBadgeText: {
     fontSize: 10.5,
     fontFamily: 'System',
-    color: lightAppTheme.colors.primaryText,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   footerBox: {
     alignItems: 'center',
@@ -613,31 +764,28 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: 'System',
     fontWeight: 'bold',
-    color: lightAppTheme.colors.forestGreen,
   },
   footerCopy: {
     fontSize: 10.5,
-    fontFamily: lightAppTheme.fontFamily.persianMedium,
-    color: lightAppTheme.colors.secondaryText,
+    fontFamily: 'Vazirmatn-Medium',
     marginTop: 4,
     textAlign: 'center',
   },
   footerVersion: {
     fontSize: 10,
-    fontFamily: lightAppTheme.fontFamily.persianRegular,
-    color: '#94A3B8',
+    fontFamily: 'Vazirmatn-Regular',
     marginTop: 2,
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.92)',
+    backgroundColor: 'rgba(0, 0, 0, 0.94)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
   },
   modalCloseBtn: {
     position: 'absolute',
-    top: 40,
+    top: 44,
     right: 20,
     width: 44,
     height: 44,
@@ -664,4 +812,3 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-

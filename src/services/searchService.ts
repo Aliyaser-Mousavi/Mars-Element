@@ -28,6 +28,44 @@ export const INITIAL_FILTERS: SearchFilterState = {
   metalType: 'all',
 };
 
+// Global reactive store for filter & sort state across search & filter screens
+let activeFilters: SearchFilterState = { ...INITIAL_FILTERS };
+let activeSort: SortOption = 'atomic-asc';
+const listeners = new Set<() => void>();
+
+export const filterStateStore = {
+  getFilters: (): SearchFilterState => ({ ...activeFilters }),
+  setFilters: (newFilters: SearchFilterState): void => {
+    activeFilters = { ...newFilters };
+    listeners.forEach((l) => l());
+  },
+  getSort: (): SortOption => activeSort,
+  setSort: (newSort: SortOption): void => {
+    activeSort = newSort;
+    listeners.forEach((l) => l());
+  },
+  reset: (): void => {
+    activeFilters = { ...INITIAL_FILTERS };
+    activeSort = 'atomic-asc';
+    listeners.forEach((l) => l());
+  },
+  getActiveCount: (): number => {
+    let count = 0;
+    if (activeFilters.category !== 'all') count++;
+    if (activeFilters.period !== 'all') count++;
+    if (activeFilters.group !== 'all') count++;
+    if (activeFilters.block !== 'all') count++;
+    if (activeFilters.state !== 'all') count++;
+    if (activeFilters.metalType !== 'all') count++;
+    if (activeSort !== 'atomic-asc') count++;
+    return count;
+  },
+  subscribe: (listener: () => void): (() => void) => {
+    listeners.add(listener);
+    return () => listeners.delete(listener);
+  },
+};
+
 // Map element category to broad metal classification
 function getMetalClassification(category: ElementCategory): MetalClassification {
   switch (category) {

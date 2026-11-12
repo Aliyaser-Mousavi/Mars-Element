@@ -59,8 +59,8 @@ export default function PeriodicTableScreen() {
   }, [allElements, selectedCategory, searchQuery]);
 
   return (
-    <ScreenContainer scrollable={false} contentContainerStyle={styles.containerPadding}>
-      {/* Header with Title, Element Counter & Search Trigger */}
+    <ScreenContainer scrollable={true} contentContainerStyle={styles.containerPadding}>
+      {/* Header with Title, Element Counter & Structured Navigation */}
       <PeriodicHeader
         totalElementsCount={allElements.length}
         filteredCount={filteredElements.length}
@@ -71,7 +71,7 @@ export default function PeriodicTableScreen() {
         onCreatorPress={() => router.push('/creator' as any)}
       />
 
-      {/* Featured Element of the Day */}
+      {/* Featured Element of the Day (Compact & Premium) */}
       <ElementOfTheDayCard />
 
       {/* Optional Search Bar Overlay/Expansion */}
@@ -106,7 +106,7 @@ export default function PeriodicTableScreen() {
               ? filteredElements[0].atomicNumber
               : null
           }
-          cellSize={60}
+          cellSize={58}
         />
       </View>
     </ScreenContainer>
@@ -116,15 +116,16 @@ export default function PeriodicTableScreen() {
 const styles = StyleSheet.create({
   containerPadding: {
     padding: 0,
+    paddingBottom: 32,
   },
   searchContainer: {
     paddingHorizontal: 16,
-    paddingBottom: 4,
+    paddingVertical: 4,
   },
   legendContainer: {
-    paddingHorizontal: 16,
+    marginTop: 2,
   },
   matrixContainer: {
-    flex: 1,
+    marginTop: 4,
   },
 });

@@ -9,9 +9,8 @@ import {
   Vazirmatn_600SemiBold,
   Vazirmatn_700Bold,
 } from '@expo-google-fonts/vazirmatn';
-import { PRIMARY_PALETTE } from '@/constants/colors';
 import { ensureRTL } from '@/utils/rtl';
-import { ThemeProvider } from '@/theme/ThemeContext';
+import { ThemeProvider, useAppTheme } from '@/theme/ThemeContext';
 
 // Ensure splash screen remains visible until resources are loaded
 SplashScreen.preventAutoHideAsync().catch(() => {
@@ -21,42 +20,17 @@ SplashScreen.preventAutoHideAsync().catch(() => {
 // Configure Persian RTL layout
 ensureRTL();
 
-export default function RootLayout() {
-  const [fontsLoaded, fontError] = useFonts({
-    Vazirmatn_400Regular,
-    Vazirmatn_500Medium,
-    Vazirmatn_600SemiBold,
-    Vazirmatn_700Bold,
-  });
-
-  useEffect(() => {
-    if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync().catch(() => {
-        /* Ignore splash errors */
-      });
-    }
-  }, [fontsLoaded, fontError]);
-
-  if (!fontsLoaded && !fontError) {
-    return null;
-  }
+function AppNavigator() {
+  const { theme, isDark } = useAppTheme();
 
   return (
-    <ThemeProvider>
-      <StatusBar style="light" />
+    <>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <Stack
         screenOptions={{
-          headerStyle: {
-            backgroundColor: PRIMARY_PALETTE.forestGreen,
-          },
-          headerTintColor: '#FFFFFF',
-          headerTitleStyle: {
-            fontFamily: 'Vazirmatn_700Bold',
-            fontSize: 18,
-          },
-          headerTitleAlign: 'center',
+          headerShown: false,
           contentStyle: {
-            backgroundColor: PRIMARY_PALETTE.background,
+            backgroundColor: theme.colors.background,
           },
           animation: 'fade',
         }}
@@ -79,6 +53,14 @@ export default function RootLayout() {
           options={{
             title: 'جستجوی هوشمند',
             headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="filter"
+          options={{
+            title: 'فیلترهای پیشرفته',
+            headerShown: false,
+            animation: 'slide_from_bottom',
           }}
         />
         <Stack.Screen
@@ -110,6 +92,33 @@ export default function RootLayout() {
           }}
         />
       </Stack>
+    </>
+  );
+}
+
+export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts({
+    Vazirmatn_400Regular,
+    Vazirmatn_500Medium,
+    Vazirmatn_600SemiBold,
+    Vazirmatn_700Bold,
+  });
+
+  useEffect(() => {
+    if (fontsLoaded || fontError) {
+      SplashScreen.hideAsync().catch(() => {
+        /* Ignore splash errors */
+      });
+    }
+  }, [fontsLoaded, fontError]);
+
+  if (!fontsLoaded && !fontError) {
+    return null;
+  }
+
+  return (
+    <ThemeProvider>
+      <AppNavigator />
     </ThemeProvider>
   );
 }

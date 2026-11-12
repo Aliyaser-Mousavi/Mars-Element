@@ -1,17 +1,11 @@
-import { useColorScheme } from 'react-native';
-import { AppTheme, darkAppTheme, lightAppTheme } from './index';
+import { useAppTheme } from './ThemeContext';
+import { AppTheme } from './themeDefinitions';
 
 /**
  * useTheme Hook
- * Returns active theme tokens. Default mode is light theme.
- * Dark theme colors are centrally defined and ready.
+ * Returns active theme tokens. Synchronized with ThemeContext and dynamic user / system preference.
  */
 export function useTheme(): AppTheme {
-  const systemScheme = useColorScheme();
-  // As per Group 00 specifications, dark theme is defined centrally,
-  // but complete theme switching experience is deferred to subsequent phases.
-  // We can default to lightAppTheme or systemScheme if preferred.
-  const isDark = systemScheme === 'dark';
-  return isDark ? darkAppTheme : lightAppTheme;
+  const { theme } = useAppTheme();
+  return theme;
 }
-

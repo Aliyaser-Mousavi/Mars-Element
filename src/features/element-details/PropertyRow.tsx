@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { lightAppTheme } from '../../theme';
-import { toPersianDigits } from '../../utils';
-import { ScientificValue, ValueOrigin } from '../../types/element';
+import { useTheme } from '@/theme';
+import { toPersianDigits } from '@/utils';
+import { ScientificValue, ValueOrigin } from '@/types/element';
 
 interface PropertyRowProps {
   label: string;
@@ -12,13 +12,6 @@ interface PropertyRowProps {
   isMono?: boolean;
 }
 
-const ORIGIN_LABELS: Record<ValueOrigin, { text: string; bg: string; color: string }> = {
-  experimental: { text: 'تجربی', bg: '#EBF5F0', color: '#267D68' },
-  estimated: { text: 'تخمینی', bg: '#FEF7E6', color: '#B7791F' },
-  predicted: { text: 'پیش‌بینی', bg: '#FDF2F2', color: '#C53030' },
-  unknown: { text: 'نامشخص', bg: '#EDF2F7', color: '#718096' },
-};
-
 export const PropertyRow: React.FC<PropertyRowProps> = ({
   label,
   value,
@@ -26,6 +19,31 @@ export const PropertyRow: React.FC<PropertyRowProps> = ({
   unit,
   isMono = false,
 }) => {
+  const theme = useTheme();
+
+  const ORIGIN_LABELS: Record<ValueOrigin, { text: string; bg: string; color: string }> = {
+    experimental: {
+      text: 'تجربی',
+      bg: theme.isDark ? `${theme.colors.scientificGreen}25` : '#EBF5F0',
+      color: theme.colors.scientificGreen,
+    },
+    estimated: {
+      text: 'تخمینی',
+      bg: theme.isDark ? `${theme.colors.goldenAccent}25` : '#FEF7E6',
+      color: theme.colors.goldenAccent,
+    },
+    predicted: {
+      text: 'پیش‌بینی',
+      bg: theme.isDark ? `${theme.colors.coral}25` : '#FDF2F2',
+      color: theme.colors.coral,
+    },
+    unknown: {
+      text: 'نامشخص',
+      bg: theme.isDark ? theme.colors.surfaceElevated : '#EDF2F7',
+      color: theme.colors.secondaryText,
+    },
+  };
+
   let displayValue: string = 'نامشخص';
   let displayUnit: string = '';
   let originBadge: { text: string; bg: string; color: string } | null = null;
@@ -53,13 +71,31 @@ export const PropertyRow: React.FC<PropertyRowProps> = ({
   const isUnavailable = displayValue === 'نامشخص';
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
-      
+    <View style={[styles.container, { borderBottomColor: theme.colors.separator }]}>
+      <Text
+        style={[
+          styles.label,
+          {
+            color: theme.colors.secondaryText,
+            fontFamily: theme.fontFamily.persianRegular,
+          },
+        ]}
+      >
+        {label}
+      </Text>
+
       <View style={styles.valueContainer}>
         {originBadge && (
           <View style={[styles.originBadge, { backgroundColor: originBadge.bg }]}>
-            <Text style={[styles.originBadgeText, { color: originBadge.color }]}>
+            <Text
+              style={[
+                styles.originBadgeText,
+                {
+                  color: originBadge.color,
+                  fontFamily: theme.fontFamily.persianMedium,
+                },
+              ]}
+            >
               {originBadge.text}
             </Text>
           </View>
@@ -68,7 +104,11 @@ export const PropertyRow: React.FC<PropertyRowProps> = ({
         <Text
           style={[
             styles.value,
-            isUnavailable && styles.unavailable,
+            {
+              color: isUnavailable ? theme.colors.secondaryText : theme.colors.primaryText,
+              fontFamily: isMono ? theme.fontFamily.latinScientific : theme.fontFamily.persianSemiBold,
+              opacity: isUnavailable ? 0.6 : 1,
+            },
             isMono && styles.monoText,
           ]}
         >
@@ -87,14 +127,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F4F2',
+    gap: 8,
   },
   label: {
     fontSize: 12.5,
-    fontFamily: lightAppTheme.fontFamily.persianRegular,
-    color: lightAppTheme.colors.secondaryText,
     flex: 1,
-    textAlign: 'left',
+    textAlign: 'right',
+    lineHeight: 18,
   },
   valueContainer: {
     flexDirection: 'row',
@@ -104,25 +143,19 @@ const styles = StyleSheet.create({
   },
   value: {
     fontSize: 13,
-    fontFamily: lightAppTheme.fontFamily.persianSemiBold,
-    color: lightAppTheme.colors.primaryText,
-    textAlign: 'right',
-  },
-  unavailable: {
-    color: '#A0AEC0',
-    fontFamily: lightAppTheme.fontFamily.persianRegular,
+    textAlign: 'left',
+    lineHeight: 18,
   },
   monoText: {
-    fontFamily: 'System',
     direction: 'ltr',
+    fontWeight: '600',
   },
   originBadge: {
-    paddingHorizontal: 5,
-    paddingVertical: 1.5,
-    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
   },
   originBadgeText: {
-    fontSize: 9,
-    fontFamily: lightAppTheme.fontFamily.persianMedium,
+    fontSize: 9.5,
   },
 });

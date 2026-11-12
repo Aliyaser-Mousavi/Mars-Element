@@ -1,9 +1,10 @@
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { lightAppTheme } from '../../theme';
-import { ChemicalElement } from '../../types/element';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { CATEGORY_COLOR_MAP } from '../../constants/colors';
 import { ELEMENT_CATEGORIES } from '../../constants/element-categories';
+import { useTheme } from '../../theme';
+import { ChemicalElement } from '../../types/element';
 import { formatAtomicMass } from '../../utils/format';
 import { toPersianDigits } from '../../utils/rtl';
 
@@ -12,6 +13,7 @@ interface ComparisonTableProps {
 }
 
 interface MetricRowDef {
+  id: string;
   labelFa: string;
   unitFa?: string;
   isMono?: boolean;
@@ -27,10 +29,12 @@ const STATE_FA: Record<string, string> = {
 
 const COMPARISON_METRICS: MetricRowDef[] = [
   {
+    id: 'atomic-number',
     labelFa: 'عدد اتمی (Z)',
     getValue: (el) => toPersianDigits(el.identity.atomicNumber),
   },
   {
+    id: 'atomic-mass',
     labelFa: 'جرم اتمی',
     unitFa: 'u',
     getValue: (el) =>
@@ -39,12 +43,14 @@ const COMPARISON_METRICS: MetricRowDef[] = [
         : 'نامشخص',
   },
   {
+    id: 'category',
     labelFa: 'خانواده شیمیایی',
     getValue: (el) =>
       ELEMENT_CATEGORIES[el.classification.category]?.nameFa ?? el.classification.category,
   },
   {
-    labelFa: 'موقعیت جدول',
+    id: 'coordinates',
+    labelFa: 'موقعیت در جدول',
     getValue: (el) =>
       `دوره ${toPersianDigits(el.classification.period)} ، ${
         el.classification.group !== null
@@ -53,19 +59,23 @@ const COMPARISON_METRICS: MetricRowDef[] = [
       }`,
   },
   {
+    id: 'standard-state',
     labelFa: 'حالت فیزیکی',
     getValue: (el) => STATE_FA[el.classification.standardState] || 'نامشخص',
   },
   {
+    id: 'electron-config',
     labelFa: 'آرایش الکترونی',
     isMono: true,
     getValue: (el) => el.atomicStructure.abbreviatedConfiguration || '-',
   },
   {
+    id: 'electron-shells',
     labelFa: 'توزیع لایه‌ای',
     getValue: (el) => el.atomicStructure.electronShells.map(toPersianDigits).join(' - '),
   },
   {
+    id: 'atomic-radius',
     labelFa: 'شعاع اتمی تجربی',
     unitFa: 'pm',
     getValue: (el) =>
@@ -74,6 +84,7 @@ const COMPARISON_METRICS: MetricRowDef[] = [
         : 'نامشخص',
   },
   {
+    id: 'electronegativity',
     labelFa: 'الکترونگاتیوی پاولینگ',
     getValue: (el) =>
       el.chemicalProperties.electronegativityPauling.value !== null
@@ -81,6 +92,7 @@ const COMPARISON_METRICS: MetricRowDef[] = [
         : 'نامشخص',
   },
   {
+    id: 'first-ionization',
     labelFa: 'انرژی نخستین یونش',
     unitFa: 'kJ/mol',
     getValue: (el) =>
@@ -89,6 +101,7 @@ const COMPARISON_METRICS: MetricRowDef[] = [
         : 'نامشخص',
   },
   {
+    id: 'density',
     labelFa: 'چگالی استاندارد',
     unitFa: 'g/cm³',
     getValue: (el) =>
@@ -97,6 +110,7 @@ const COMPARISON_METRICS: MetricRowDef[] = [
         : 'نامشخص',
   },
   {
+    id: 'melting-point',
     labelFa: 'نقطه ذوب',
     unitFa: 'K',
     getValue: (el) =>
@@ -105,6 +119,7 @@ const COMPARISON_METRICS: MetricRowDef[] = [
         : 'نامشخص',
   },
   {
+    id: 'boiling-point',
     labelFa: 'نقطه جوش',
     unitFa: 'K',
     getValue: (el) =>
@@ -115,174 +130,299 @@ const COMPARISON_METRICS: MetricRowDef[] = [
 ];
 
 export const ComparisonTable: React.FC<ComparisonTableProps> = ({ elements }) => {
+  const theme = useTheme();
+
   if (elements.length === 0) return null;
 
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollWrapper}>
-      <View style={styles.table}>
-        {/* Header Row: Element Cards */}
-        <View style={styles.headerRow}>
-          <View style={styles.metricLabelCol}>
-            <Text style={styles.headerTitleLabel}>ویژگی علمی</Text>
+    <View style={styles.container}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <View
+          style={[
+            styles.table,
+            {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.border,
+            },
+          ]}
+        >
+          {/* Header Row: Column Titles & Element Tiles */}
+          <View
+            style={[
+              styles.headerRow,
+              {
+                backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8FAFC',
+                borderBottomColor: theme.colors.border,
+              },
+            ]}
+          >
+            {/* Metric Column Header */}
+            <View style={[styles.metricLabelCol, { borderLeftColor: theme.colors.border }]}>
+              <View style={styles.headerLabelWrap}>
+                <Ionicons name="flask-outline" size={16} color={theme.colors.scientificGreen} />
+                <Text style={[styles.headerTitleLabel, { color: theme.colors.primaryText }]}>
+                  ویژگی‌های علمی
+                </Text>
+              </View>
+              <Text style={[styles.headerSubLabel, { color: theme.colors.secondaryText }]}>
+                {toPersianDigits(elements.length)} عنصر
+              </Text>
+            </View>
+
+            {/* Compared Elements Headers */}
+            {elements.map((el) => {
+              const catColor =
+                CATEGORY_COLOR_MAP[el.classification.category] || theme.colors.scientificGreen;
+              return (
+                <View
+                  key={`head-${el.identity.atomicNumber}`}
+                  style={[styles.elementCol, { borderLeftColor: theme.colors.border }]}
+                >
+                  <View
+                    style={[
+                      styles.elementMiniCard,
+                      {
+                        borderColor: `${catColor}70`,
+                        backgroundColor: `${catColor}14`,
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.atomicNumber, { color: catColor }]}>
+                      {toPersianDigits(el.identity.atomicNumber)}
+                    </Text>
+                    <Text style={[styles.symbolText, { color: theme.colors.primaryText }]}>
+                      {el.identity.symbol}
+                    </Text>
+                    <Text
+                      style={[styles.nameFaText, { color: theme.colors.primaryText }]}
+                      numberOfLines={1}
+                    >
+                      {el.identity.nameFa}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
           </View>
 
-          {elements.map((el) => {
-            const catColor = CATEGORY_COLOR_MAP[el.classification.category] || lightAppTheme.colors.scientificGreen;
+          {/* Data Metric Rows */}
+          {COMPARISON_METRICS.map((metric, rowIdx) => {
+            const values = elements.map((e) => metric.getValue(e));
+            // Highlight differences if more than 1 element and values differ
+            const isDifferent = elements.length > 1 && new Set(values).size > 1;
+
+            let rowBg =
+              rowIdx % 2 === 0
+                ? theme.isDark
+                  ? 'rgba(255, 255, 255, 0.015)'
+                  : '#FAFCFB'
+                : 'transparent';
+
+            if (isDifferent) {
+              rowBg = theme.isDark ? 'rgba(217, 119, 6, 0.08)' : '#FEFDF5';
+            }
+
             return (
-              <View key={`head-${el.identity.atomicNumber}`} style={styles.elementCol}>
-                <View style={[styles.elementMiniCard, { borderColor: catColor, backgroundColor: `${catColor}12` }]}>
-                  <Text style={styles.atomicNumber}>{toPersianDigits(el.identity.atomicNumber)}</Text>
-                  <Text style={styles.symbolText}>{el.identity.symbol}</Text>
-                  <Text style={styles.nameFaText}>{el.identity.nameFa}</Text>
+              <View
+                key={metric.id}
+                style={[
+                  styles.dataRow,
+                  {
+                    backgroundColor: rowBg,
+                    borderBottomColor: theme.isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9',
+                  },
+                ]}
+              >
+                {/* Metric Label Column */}
+                <View style={[styles.metricLabelCol, { borderLeftColor: theme.colors.border }]}>
+                  <View style={styles.metricNameRow}>
+                    <Text style={[styles.rowLabelText, { color: theme.colors.primaryText }]}>
+                      {metric.labelFa}
+                    </Text>
+                    {isDifferent && (
+                      <View style={styles.diffIndicatorDot} />
+                    )}
+                  </View>
+                  {metric.unitFa && (
+                    <Text style={[styles.unitText, { color: theme.colors.secondaryText }]}>
+                      ({metric.unitFa})
+                    </Text>
+                  )}
                 </View>
+
+                {/* Values for each compared element */}
+                {values.map((val, colIdx) => (
+                  <View
+                    key={`val-${metric.id}-${colIdx}`}
+                    style={[styles.elementCol, { borderLeftColor: theme.colors.border }]}
+                  >
+                    <Text
+                      style={[
+                        styles.cellValueText,
+                        { color: theme.colors.primaryText },
+                        val === 'نامشخص' && [styles.cellUnavailable, { color: theme.colors.secondaryText }],
+                        metric.isMono && styles.monoText,
+                      ]}
+                      numberOfLines={2}
+                    >
+                      {val}
+                    </Text>
+                  </View>
+                ))}
               </View>
             );
           })}
         </View>
+      </ScrollView>
 
-        {/* Data Metric Rows */}
-        {COMPARISON_METRICS.map((metric, rowIdx) => {
-          const values = elements.map((e) => metric.getValue(e));
-          // Highlight differences if more than 1 element and values differ
-          const isDifferent = elements.length > 1 && new Set(values).size > 1;
-
-          return (
-            <View
-              key={`metric-${rowIdx}`}
-              style={[
-                styles.dataRow,
-                rowIdx % 2 === 0 && styles.dataRowEven,
-                isDifferent && styles.dataRowDiff,
-              ]}
-            >
-              <View style={styles.metricLabelCol}>
-                <Text style={styles.rowLabelText}>{metric.labelFa}</Text>
-                {metric.unitFa && <Text style={styles.unitText}>({metric.unitFa})</Text>}
-              </View>
-
-              {values.map((val, colIdx) => (
-                <View key={`val-${rowIdx}-${colIdx}`} style={styles.elementCol}>
-                  <Text
-                    style={[
-                      styles.cellValueText,
-                      val === 'نامشخص' && styles.cellUnavailable,
-                      metric.isMono && styles.monoText,
-                    ]}
-                  >
-                    {val}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          );
-        })}
-      </View>
-    </ScrollView>
+      {/* Legend / Difference Highlight Note */}
+      {elements.length > 1 && (
+        <View style={styles.legendRow}>
+          <View style={styles.diffIndicatorDot} />
+          <Text style={[styles.legendText, { color: theme.colors.secondaryText }]}>
+            سطرهای دارای نشانگر نارنجی مقادیر متفاوت دارند
+          </Text>
+        </View>
+      )}
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  scrollWrapper: {
-    marginVertical: 10,
+  container: {
+    marginVertical: 6,
+    gap: 8,
+  },
+  scrollContent: {
+    paddingVertical: 4,
   },
   table: {
-    backgroundColor: lightAppTheme.colors.surface,
-    borderRadius: lightAppTheme.borderRadius.md,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: lightAppTheme.colors.border,
     overflow: 'hidden',
-    minWidth: 320,
+    minWidth: 340,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 2,
   },
   headerRow: {
     flexDirection: 'row',
-    backgroundColor: '#F8FAFC',
     borderBottomWidth: 1.5,
-    borderBottomColor: lightAppTheme.colors.border,
-    paddingVertical: 10,
+    paddingVertical: 12,
     alignItems: 'center',
   },
   metricLabelCol: {
-    width: 125,
-    paddingHorizontal: 10,
+    width: 135,
+    paddingHorizontal: 12,
     justifyContent: 'center',
+    borderLeftWidth: 1,
   },
-  elementCol: {
-    width: 110,
-    paddingHorizontal: 6,
+  headerLabelWrap: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 6,
   },
   headerTitleLabel: {
-    fontSize: 12,
-    fontFamily: lightAppTheme.fontFamily.persianBold,
-    color: lightAppTheme.colors.forestGreen,
+    fontSize: 12.5,
+    fontFamily: 'Vazirmatn-Bold',
+  },
+  headerSubLabel: {
+    fontSize: 10.5,
+    fontFamily: 'Vazirmatn-Regular',
+    marginTop: 2,
+  },
+  elementCol: {
+    width: 115,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderLeftWidth: 1,
   },
   elementMiniCard: {
-    width: 95,
-    height: 76,
-    borderRadius: 8,
+    width: 98,
+    height: 82,
+    borderRadius: 12,
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 4,
+    padding: 6,
+    position: 'relative',
   },
   atomicNumber: {
     position: 'absolute',
-    top: 4,
-    left: 6,
-    fontSize: 9.5,
-    fontFamily: lightAppTheme.fontFamily.persianBold,
-    color: lightAppTheme.colors.primaryText,
+    top: 5,
+    left: 8,
+    fontSize: 10,
+    fontFamily: 'Vazirmatn-Bold',
   },
   symbolText: {
-    fontSize: 22,
+    fontSize: 24,
     fontFamily: 'System',
     fontWeight: 'bold',
-    color: lightAppTheme.colors.primaryText,
   },
   nameFaText: {
-    fontSize: 11,
-    fontFamily: lightAppTheme.fontFamily.persianBold,
-    color: lightAppTheme.colors.primaryText,
+    fontSize: 11.5,
+    fontFamily: 'Vazirmatn-Bold',
     marginTop: 2,
   },
   dataRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-    paddingVertical: 9,
+    paddingVertical: 10,
     alignItems: 'center',
+    minHeight: 44,
   },
-  dataRowEven: {
-    backgroundColor: '#FAFCFB',
-  },
-  dataRowDiff: {
-    backgroundColor: '#FEFDF5',
+  metricNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 4,
   },
   rowLabelText: {
     fontSize: 11.5,
-    fontFamily: lightAppTheme.fontFamily.persianMedium,
-    color: lightAppTheme.colors.primaryText,
+    fontFamily: 'Vazirmatn-Medium',
+    flex: 1,
+  },
+  diffIndicatorDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#D97706',
   },
   unitText: {
-    fontSize: 9.5,
+    fontSize: 10,
     fontFamily: 'System',
-    color: lightAppTheme.colors.secondaryText,
-    marginTop: 1,
+    marginTop: 2,
   },
   cellValueText: {
     fontSize: 11.5,
-    fontFamily: lightAppTheme.fontFamily.persianSemiBold,
-    color: lightAppTheme.colors.primaryText,
+    fontFamily: 'Vazirmatn-Bold',
     textAlign: 'center',
+    lineHeight: 18,
   },
   cellUnavailable: {
-    color: '#94A3B8',
-    fontFamily: lightAppTheme.fontFamily.persianRegular,
+    fontFamily: 'Vazirmatn-Regular',
+    opacity: 0.7,
   },
   monoText: {
     fontFamily: 'System',
-    fontSize: 10,
+    fontSize: 10.5,
+    direction: 'ltr',
+  },
+  legendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 4,
+  },
+  legendText: {
+    fontSize: 11,
+    fontFamily: 'Vazirmatn-Regular',
   },
 });
-

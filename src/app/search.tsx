@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,32 +7,76 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { ScreenContainer, SearchField, EmptyState } from '../components';
-import { lightAppTheme } from '../theme';
+import { ScreenContainer, SearchField, EmptyState } from '@/components';
+import { useTheme } from '@/theme';
 import {
   searchAndFilterElements,
   INITIAL_FILTERS,
   SearchFilterState,
   SortOption,
-} from '../services/searchService';
-import { recentSearchesStorage } from '../services/recentSearchesService';
-import { SearchResultCard } from '../features/search/SearchResultCard';
-import { FilterModal } from '../features/search/FilterModal';
-import { toPersianDigits } from '../utils/rtl';
+  filterStateStore,
+} from '@/services/searchService';
+import { recentSearchesStorage } from '@/services/recentSearchesService';
+import { SearchResultCard } from '@/features/search/SearchResultCard';
+import { ELEMENT_CATEGORIES } from '@/constants/element-categories';
+import { toPersianDigits } from '@/utils/rtl';
 
-const POPULAR_SUGGESTIONS = ['طلا', 'آهن', 'اکسیژن', 'اورانیوم', 'Fe', 'Au', '79', 'هیدروژن', 'کربن'];
+const POPULAR_SUGGESTIONS = [
+  'طلا',
+  'آهن',
+  'اکسیژن',
+  'اورانیوم',
+  'Fe',
+  'Au',
+  '79',
+  'هیدروژن',
+  'کربن',
+  'مس',
+  'نقره',
+  'پلاتین',
+];
+
+const STATE_NAMES: Record<string, string> = {
+  solid: 'جامد',
+  liquid: 'مایع',
+  gas: 'گاز',
+};
+
+const METAL_NAMES: Record<string, string> = {
+  metal: 'فلز',
+  metalloid: 'شبه‌فلز',
+  nonmetal: 'نافلز',
+};
+
+const SORT_LABELS: Record<SortOption, string> = {
+  'atomic-asc': 'شماره اتمی (صعودی)',
+  'atomic-desc': 'شماره اتمی (نزولی)',
+  'mass-asc': 'جرم اتمی (کم به زیاد)',
+  'mass-desc': 'جرم اتمی (زیاد به کم)',
+  'name-fa-asc': 'الفبای فارسی',
+};
 
 export default function SearchScreen() {
   const router = useRouter();
+  const theme = useTheme();
 
   const [query, setQuery] = useState('');
-  const [filters, setFilters] = useState<SearchFilterState>(INITIAL_FILTERS);
-  const [sort, setSort] = useState<SortOption>('atomic-asc');
-  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [filters, setFilters] = useState<SearchFilterState>(() => filterStateStore.getFilters());
+  const [sort, setSort] = useState<SortOption>(() => filterStateStore.getSort());
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+
+  // Subscribe to filter state changes (e.g. from dedicated /filter route)
+  useEffect(() => {
+    const unsubscribe = filterStateStore.subscribe(() => {
+      setFilters(filterStateStore.getFilters());
+      setSort(filterStateStore.getSort());
+    });
+    return unsubscribe;
+  }, []);
 
   // Load recent searches on mount
   useEffect(() => {
@@ -73,7 +117,7 @@ export default function SearchScreen() {
     setRecentSearches(updated);
   };
 
-  const handleElementPress = async (atomicNumber: number, elementName: string) => {
+  const handleElementPress = async (atomicNumber: number) => {
     if (query.trim()) {
       const updated = await recentSearchesStorage.addSearch(query.trim());
       setRecentSearches(updated);
@@ -81,13 +125,45 @@ export default function SearchScreen() {
     router.push(`/element/${atomicNumber}` as any);
   };
 
-  const handleResetFilters = () => {
-    setFilters(INITIAL_FILTERS);
-    setSort('atomic-asc');
+  const handleResetFilters = useCallback(() => {
+    filterStateStore.reset();
+  }, []);
+
+  const handleOpenFilters = () => {
+    router.push('/filter' as any);
+  };
+
+  // Individual filter clear handlers
+  const handleClearCategory = () => {
+    const updated = { ...filters, category: 'all' as const };
+    filterStateStore.setFilters(updated);
+  };
+  const handleClearPeriod = () => {
+    const updated = { ...filters, period: 'all' as const };
+    filterStateStore.setFilters(updated);
+  };
+  const handleClearGroup = () => {
+    const updated = { ...filters, group: 'all' as const };
+    filterStateStore.setFilters(updated);
+  };
+  const handleClearBlock = () => {
+    const updated = { ...filters, block: 'all' as const };
+    filterStateStore.setFilters(updated);
+  };
+  const handleClearState = () => {
+    const updated = { ...filters, state: 'all' as const };
+    filterStateStore.setFilters(updated);
+  };
+  const handleClearMetalType = () => {
+    const updated = { ...filters, metalType: 'all' as const };
+    filterStateStore.setFilters(updated);
+  };
+  const handleClearSort = () => {
+    filterStateStore.setSort('atomic-asc');
   };
 
   return (
-    <ScreenContainer scrollable={false}>
+    <ScreenContainer scrollable={false} contentContainerStyle={styles.containerPadding}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboardView}
@@ -95,31 +171,83 @@ export default function SearchScreen() {
         {/* Top App Bar */}
         <View style={styles.topBar}>
           <TouchableOpacity
-            style={styles.backBtn}
+            style={[
+              styles.backBtn,
+              {
+                backgroundColor: theme.isDark ? theme.colors.surfaceElevated : theme.colors.lightGreen,
+                borderColor: theme.isDark ? theme.colors.border : `${theme.colors.scientificGreen}25`,
+              },
+            ]}
             onPress={() => router.back()}
-            activeOpacity={0.7}
+            activeOpacity={theme.interactive.activeOpacity}
+            accessibilityRole="button"
+            accessibilityLabel="بازگشت به جدول تناوبی"
           >
-            <Ionicons name="arrow-forward-outline" size={20} color={lightAppTheme.colors.forestGreen} />
-            <Text style={styles.backText}>جدول تناوبی</Text>
+            <Ionicons name="arrow-forward" size={18} color={theme.colors.forestGreen} />
+            <Text
+              style={[
+                styles.backText,
+                {
+                  color: theme.colors.forestGreen,
+                  fontFamily: theme.fontFamily.persianSemiBold,
+                },
+              ]}
+            >
+              جدول
+            </Text>
           </TouchableOpacity>
 
-          <Text style={styles.screenTitle}>جستجوی هوشمند عناصر</Text>
+          <Text
+            style={[
+              styles.screenTitle,
+              {
+                color: theme.colors.primaryText,
+                fontFamily: theme.fontFamily.persianBold,
+              },
+            ]}
+          >
+            جستجوی پیشرفته عناصر
+          </Text>
 
+          {/* Filter Action Button */}
           <TouchableOpacity
-            style={[styles.filterTrigger, activeFiltersCount > 0 && styles.filterTriggerActive]}
-            onPress={() => setFilterModalVisible(true)}
-            activeOpacity={0.7}
+            style={[
+              styles.filterBtn,
+              {
+                backgroundColor: activeFiltersCount > 0
+                  ? theme.colors.scientificGreen
+                  : theme.isDark ? theme.colors.surfaceElevated : theme.colors.card,
+                borderColor: activeFiltersCount > 0 ? theme.colors.scientificGreen : theme.colors.cardBorder,
+              },
+            ]}
+            onPress={handleOpenFilters}
+            activeOpacity={theme.interactive.activeOpacity}
+            accessibilityRole="button"
+            accessibilityLabel={`فیلترها، ${activeFiltersCount} فیلتر فعال`}
           >
             <Ionicons
               name="options-outline"
-              size={18}
-              color={activeFiltersCount > 0 ? '#FFFFFF' : lightAppTheme.colors.forestGreen}
+              size={17}
+              color={activeFiltersCount > 0 ? '#FFFFFF' : theme.colors.scientificGreen}
             />
-            {activeFiltersCount > 0 && (
+            <Text
+              style={[
+                styles.filterBtnText,
+                {
+                  color: activeFiltersCount > 0 ? '#FFFFFF' : theme.colors.primaryText,
+                  fontFamily: theme.fontFamily.persianMedium,
+                },
+              ]}
+            >
+              فیلترها
+            </Text>
+            {activeFiltersCount > 0 ? (
               <View style={styles.filterBadge}>
-                <Text style={styles.filterBadgeText}>{toPersianDigits(activeFiltersCount)}</Text>
+                <Text style={styles.filterBadgeText}>
+                  {toPersianDigits(activeFiltersCount)}
+                </Text>
               </View>
-            )}
+            ) : null}
           </TouchableOpacity>
         </View>
 
@@ -128,78 +256,323 @@ export default function SearchScreen() {
           <SearchField
             value={query}
             onChangeText={setQuery}
-            placeholder="نام، نماد شیمیایی (Fe, Au)، عدد اتمی یا نام انگلیسی..."
-            autoFocus
+            placeholder="نام فارسی، نماد (Fe, Au)، عدد اتمی یا نام انگلیسی..."
+            autoFocus={true}
           />
         </View>
 
-        {/* Suggestion & Recent Searches Bar (when query is short or empty) */}
-        {!query.trim() && (
-          <View style={styles.suggestionsContainer}>
-            {/* Quick popular tags */}
-            <View style={styles.tagsSection}>
-              <Text style={styles.subTitle}>پیشنهادهای سریع:</Text>
-              <View style={styles.tagsRow}>
-                {POPULAR_SUGGESTIONS.map((tag) => (
+        {/* Active Filters Pill Strip (if any active) */}
+        {activeFiltersCount > 0 ? (
+          <View style={styles.activeFiltersStrip}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.activeFiltersScroll}
+            >
+              {filters.category !== 'all' ? (
+                <View
+                  style={[
+                    styles.activePill,
+                    {
+                      backgroundColor: theme.isDark ? `${theme.colors.scientificGreen}25` : theme.colors.lightGreen,
+                      borderColor: theme.colors.scientificGreen,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.activePillText, { color: theme.colors.primaryText, fontFamily: theme.fontFamily.persianMedium }]}>
+                    خانواده: {ELEMENT_CATEGORIES[filters.category]?.nameFa || filters.category}
+                  </Text>
+                  <TouchableOpacity onPress={handleClearCategory} hitSlop={theme.interactive.hitSlopSm}>
+                    <Ionicons name="close-circle" size={14} color={theme.colors.scientificGreen} />
+                  </TouchableOpacity>
+                </View>
+              ) : null}
+
+              {filters.period !== 'all' ? (
+                <View
+                  style={[
+                    styles.activePill,
+                    {
+                      backgroundColor: theme.isDark ? `${theme.colors.scientificGreen}25` : theme.colors.lightGreen,
+                      borderColor: theme.colors.scientificGreen,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.activePillText, { color: theme.colors.primaryText, fontFamily: theme.fontFamily.persianMedium }]}>
+                    دوره: {toPersianDigits(filters.period)}
+                  </Text>
+                  <TouchableOpacity onPress={handleClearPeriod} hitSlop={theme.interactive.hitSlopSm}>
+                    <Ionicons name="close-circle" size={14} color={theme.colors.scientificGreen} />
+                  </TouchableOpacity>
+                </View>
+              ) : null}
+
+              {filters.group !== 'all' ? (
+                <View
+                  style={[
+                    styles.activePill,
+                    {
+                      backgroundColor: theme.isDark ? `${theme.colors.scientificGreen}25` : theme.colors.lightGreen,
+                      borderColor: theme.colors.scientificGreen,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.activePillText, { color: theme.colors.primaryText, fontFamily: theme.fontFamily.persianMedium }]}>
+                    گروه: {toPersianDigits(filters.group)}
+                  </Text>
+                  <TouchableOpacity onPress={handleClearGroup} hitSlop={theme.interactive.hitSlopSm}>
+                    <Ionicons name="close-circle" size={14} color={theme.colors.scientificGreen} />
+                  </TouchableOpacity>
+                </View>
+              ) : null}
+
+              {filters.block !== 'all' ? (
+                <View
+                  style={[
+                    styles.activePill,
+                    {
+                      backgroundColor: theme.isDark ? `${theme.colors.scientificGreen}25` : theme.colors.lightGreen,
+                      borderColor: theme.colors.scientificGreen,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.activePillText, { color: theme.colors.primaryText, fontFamily: theme.fontFamily.persianMedium }]}>
+                    بلوک: {filters.block}
+                  </Text>
+                  <TouchableOpacity onPress={handleClearBlock} hitSlop={theme.interactive.hitSlopSm}>
+                    <Ionicons name="close-circle" size={14} color={theme.colors.scientificGreen} />
+                  </TouchableOpacity>
+                </View>
+              ) : null}
+
+              {filters.state !== 'all' ? (
+                <View
+                  style={[
+                    styles.activePill,
+                    {
+                      backgroundColor: theme.isDark ? `${theme.colors.scientificGreen}25` : theme.colors.lightGreen,
+                      borderColor: theme.colors.scientificGreen,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.activePillText, { color: theme.colors.primaryText, fontFamily: theme.fontFamily.persianMedium }]}>
+                    حالت: {STATE_NAMES[filters.state] || filters.state}
+                  </Text>
+                  <TouchableOpacity onPress={handleClearState} hitSlop={theme.interactive.hitSlopSm}>
+                    <Ionicons name="close-circle" size={14} color={theme.colors.scientificGreen} />
+                  </TouchableOpacity>
+                </View>
+              ) : null}
+
+              {filters.metalType !== 'all' ? (
+                <View
+                  style={[
+                    styles.activePill,
+                    {
+                      backgroundColor: theme.isDark ? `${theme.colors.scientificGreen}25` : theme.colors.lightGreen,
+                      borderColor: theme.colors.scientificGreen,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.activePillText, { color: theme.colors.primaryText, fontFamily: theme.fontFamily.persianMedium }]}>
+                    طبقه‌بندی: {METAL_NAMES[filters.metalType] || filters.metalType}
+                  </Text>
+                  <TouchableOpacity onPress={handleClearMetalType} hitSlop={theme.interactive.hitSlopSm}>
+                    <Ionicons name="close-circle" size={14} color={theme.colors.scientificGreen} />
+                  </TouchableOpacity>
+                </View>
+              ) : null}
+
+              {sort !== 'atomic-asc' ? (
+                <View
+                  style={[
+                    styles.activePill,
+                    {
+                      backgroundColor: theme.isDark ? `${theme.colors.goldenAccent}25` : '#FEF6E9',
+                      borderColor: theme.colors.goldenAccent,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.activePillText, { color: theme.colors.primaryText, fontFamily: theme.fontFamily.persianMedium }]}>
+                    ترتیب: {SORT_LABELS[sort]}
+                  </Text>
+                  <TouchableOpacity onPress={handleClearSort} hitSlop={theme.interactive.hitSlopSm}>
+                    <Ionicons name="close-circle" size={14} color={theme.colors.goldenAccent} />
+                  </TouchableOpacity>
+                </View>
+              ) : null}
+
+              <TouchableOpacity
+                onPress={handleResetFilters}
+                style={styles.clearAllFiltersBtn}
+                hitSlop={theme.interactive.hitSlopSm}
+              >
+                <Text
+                  style={[
+                    styles.clearAllFiltersText,
+                    { color: theme.colors.coral, fontFamily: theme.fontFamily.persianMedium },
+                  ]}
+                >
+                  حذف همه
+                </Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        ) : null}
+
+        {/* Suggestion & Recent Searches Container (shown when search query is empty) */}
+        {!query.trim() ? (
+          <View
+            style={[
+              styles.suggestionsCard,
+              {
+                backgroundColor: theme.colors.card,
+                borderColor: theme.colors.cardBorder,
+              },
+            ]}
+          >
+            {/* Quick Popular Suggestions */}
+            <View style={styles.sectionWrap}>
+              <View style={styles.sectionLabelRow}>
+                <Ionicons name="flash-outline" size={13} color={theme.colors.goldenAccent} />
+                <Text
+                  style={[
+                    styles.sectionHeadingText,
+                    {
+                      color: theme.colors.primaryText,
+                      fontFamily: theme.fontFamily.persianSemiBold,
+                    },
+                  ]}
+                >
+                  پیشنهادهای سریع:
+                </Text>
+              </View>
+              <View style={styles.chipsFlow}>
+                {POPULAR_SUGGESTIONS.map((item) => (
                   <TouchableOpacity
-                    key={tag}
-                    style={styles.tagChip}
-                    onPress={() => handleSelectQuery(tag)}
+                    key={item}
+                    style={[
+                      styles.suggestionChip,
+                      {
+                        backgroundColor: theme.isDark ? theme.colors.surfaceElevated : theme.colors.surfaceMuted,
+                        borderColor: theme.colors.cardBorder,
+                      },
+                    ]}
+                    onPress={() => handleSelectQuery(item)}
+                    activeOpacity={theme.interactive.activeOpacity}
                   >
-                    <Text style={styles.tagText}>{tag}</Text>
+                    <Text
+                      style={[
+                        styles.suggestionChipText,
+                        {
+                          color: theme.colors.primaryText,
+                          fontFamily: theme.fontFamily.persianMedium,
+                        },
+                      ]}
+                    >
+                      {item}
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
 
             {/* Recent Searches */}
-            {recentSearches.length > 0 && (
-              <View style={styles.recentSection}>
-                <View style={styles.recentHeader}>
-                  <Text style={styles.subTitle}>جستجوهای اخیر:</Text>
-                  <TouchableOpacity onPress={handleClearRecent}>
-                    <Text style={styles.clearRecentText}>پاک‌کردن همه</Text>
+            {recentSearches.length > 0 ? (
+              <View
+                style={[
+                  styles.recentWrap,
+                  { borderTopColor: theme.colors.separator },
+                ]}
+              >
+                <View style={styles.recentHeaderRow}>
+                  <View style={styles.sectionLabelRow}>
+                    <Ionicons name="time-outline" size={13} color={theme.colors.secondaryText} />
+                    <Text
+                      style={[
+                        styles.sectionHeadingText,
+                        {
+                          color: theme.colors.secondaryText,
+                          fontFamily: theme.fontFamily.persianMedium,
+                        },
+                      ]}
+                    >
+                      جستجوهای اخیر:
+                    </Text>
+                  </View>
+                  <TouchableOpacity onPress={handleClearRecent} hitSlop={theme.interactive.hitSlopSm}>
+                    <Text
+                      style={[
+                        styles.clearHistoryText,
+                        {
+                          color: theme.colors.coral,
+                          fontFamily: theme.fontFamily.persianRegular,
+                        },
+                      ]}
+                    >
+                      پاک‌کردن تاریخچه
+                    </Text>
                   </TouchableOpacity>
                 </View>
-                <View style={styles.recentList}>
+
+                <View style={styles.chipsFlow}>
                   {recentSearches.map((item) => (
-                    <View key={item} style={styles.recentItem}>
+                    <View
+                      key={item}
+                      style={[
+                        styles.recentChip,
+                        {
+                          backgroundColor: theme.isDark ? theme.colors.surfaceElevated : '#F3F7F5',
+                          borderColor: theme.colors.cardBorder,
+                        },
+                      ]}
+                    >
                       <TouchableOpacity
-                        style={styles.recentItemBtn}
+                        style={styles.recentChipBtn}
                         onPress={() => handleSelectQuery(item)}
                       >
-                        <Ionicons name="time-outline" size={15} color={lightAppTheme.colors.secondaryText} />
-                        <Text style={styles.recentItemText}>{item}</Text>
+                        <Text
+                          style={[
+                            styles.recentChipText,
+                            {
+                              color: theme.colors.primaryText,
+                              fontFamily: theme.fontFamily.persianRegular,
+                            },
+                          ]}
+                        >
+                          {item}
+                        </Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         onPress={() => handleRemoveRecentItem(item)}
-                        style={styles.recentItemRemove}
+                        style={styles.recentChipRemove}
+                        hitSlop={theme.interactive.hitSlopSm}
                       >
-                        <Ionicons name="close" size={14} color="#A0AEC0" />
+                        <Ionicons name="close" size={12} color={theme.colors.secondaryText} />
                       </TouchableOpacity>
                     </View>
                   ))}
                 </View>
               </View>
-            )}
+            ) : null}
           </View>
-        )}
+        ) : null}
 
-        {/* Results Counter / Filter Indicator */}
+        {/* Results Counter Row */}
         <View style={styles.resultsCounterRow}>
-          <Text style={styles.counterText}>
+          <Text
+            style={[
+              styles.counterText,
+              {
+                color: theme.colors.secondaryText,
+                fontFamily: theme.fontFamily.persianMedium,
+              },
+            ]}
+          >
             {results.length > 0
               ? `${toPersianDigits(results.length)} عنصر یافت شد`
               : 'نتیجه‌ای یافت نشد'}
           </Text>
-          {activeFiltersCount > 0 && (
-            <TouchableOpacity onPress={handleResetFilters} style={styles.activeFilterTag}>
-              <Text style={styles.activeFilterTagText}>
-                {toPersianDigits(activeFiltersCount)} فیلتر فعال (حذف)
-              </Text>
-              <Ionicons name="close-circle" size={14} color={lightAppTheme.colors.coral} />
-            </TouchableOpacity>
-          )}
         </View>
 
         {/* Results List */}
@@ -209,7 +582,7 @@ export default function SearchScreen() {
           renderItem={({ item }) => (
             <SearchResultCard
               item={item}
-              onPress={() => handleElementPress(item.element.identity.atomicNumber, item.element.identity.nameFa)}
+              onPress={() => handleElementPress(item.element.identity.atomicNumber)}
             />
           )}
           contentContainerStyle={styles.listContent}
@@ -218,22 +591,11 @@ export default function SearchScreen() {
           ListEmptyComponent={
             <EmptyState
               title="عنصری یافت نشد"
-              message={`هیچ عنصری با معیارهای انتخابی مطابق نیست. لطفاً املای عبارت یا فیلترهای اعمال‌شده را بررسی کنید.`}
+              message="هیچ عنصری با معیارهای انتخابی تطابق ندارد. لطفاً املای عبارت یا فیلترهای فعال را بررسی فرمایید."
               actionTitle={activeFiltersCount > 0 ? 'حذف فیلترها' : undefined}
               onAction={activeFiltersCount > 0 ? handleResetFilters : undefined}
             />
           }
-        />
-
-        {/* Advanced Filters & Sorting Modal */}
-        <FilterModal
-          visible={filterModalVisible}
-          filters={filters}
-          sort={sort}
-          onChangeFilters={setFilters}
-          onChangeSort={setSort}
-          onReset={handleResetFilters}
-          onClose={() => setFilterModalVisible(false)}
         />
       </KeyboardAvoidingView>
     </ScreenContainer>
@@ -241,6 +603,10 @@ export default function SearchScreen() {
 }
 
 const styles = StyleSheet.create({
+  containerPadding: {
+    padding: 16,
+    paddingBottom: 24,
+  },
   keyboardView: {
     flex: 1,
   },
@@ -248,138 +614,140 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingBottom: 10,
+    marginBottom: 10,
   },
   backBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: lightAppTheme.colors.lightGreen,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: lightAppTheme.borderRadius.sm,
+    borderRadius: 8,
+    borderWidth: 1,
   },
   backText: {
     fontSize: 12,
-    fontFamily: lightAppTheme.fontFamily.persianSemiBold,
-    color: lightAppTheme.colors.forestGreen,
   },
   screenTitle: {
     fontSize: 15,
-    fontFamily: lightAppTheme.fontFamily.persianBold,
-    color: lightAppTheme.colors.primaryText,
   },
-  filterTrigger: {
+  filterBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: lightAppTheme.colors.lightGreen,
-    justifyContent: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: lightAppTheme.colors.border,
+    gap: 5,
   },
-  filterTriggerActive: {
-    backgroundColor: lightAppTheme.colors.scientificGreen,
-    borderColor: lightAppTheme.colors.scientificGreen,
+  filterBtnText: {
+    fontSize: 12,
   },
   filterBadge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    backgroundColor: lightAppTheme.colors.coral,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    backgroundColor: '#D96C64',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 10,
+    minWidth: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
   filterBadgeText: {
     color: '#FFFFFF',
-    fontSize: 9,
-    fontFamily: lightAppTheme.fontFamily.persianBold,
+    fontSize: 9.5,
+    fontWeight: 'bold',
   },
   searchRow: {
-    marginBottom: 8,
-  },
-  suggestionsContainer: {
-    backgroundColor: lightAppTheme.colors.surface,
-    borderRadius: lightAppTheme.borderRadius.md,
-    padding: 12,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: lightAppTheme.colors.border,
-  },
-  tagsSection: {
-    marginBottom: 8,
-  },
-  subTitle: {
-    fontSize: 12,
-    fontFamily: lightAppTheme.fontFamily.persianSemiBold,
-    color: lightAppTheme.colors.forestGreen,
     marginBottom: 6,
   },
-  tagsRow: {
+  activeFiltersStrip: {
+    marginBottom: 8,
+  },
+  activeFiltersScroll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 2,
+  },
+  activePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  activePillText: {
+    fontSize: 10.5,
+  },
+  clearAllFiltersBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  clearAllFiltersText: {
+    fontSize: 10.5,
+  },
+  suggestionsCard: {
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 10,
+    gap: 10,
+  },
+  sectionWrap: {
+    gap: 6,
+  },
+  sectionLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  sectionHeadingText: {
+    fontSize: 11.5,
+  },
+  chipsFlow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
   },
-  tagChip: {
-    backgroundColor: '#F0F4F2',
-    paddingHorizontal: 9,
+  suggestionChip: {
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 6,
+    borderRadius: 8,
+    borderWidth: 1,
   },
-  tagText: {
-    fontSize: 11.5,
-    fontFamily: lightAppTheme.fontFamily.persianMedium,
-    color: lightAppTheme.colors.primaryText,
+  suggestionChipText: {
+    fontSize: 11,
   },
-  recentSection: {
+  recentWrap: {
     borderTopWidth: 1,
-    borderTopColor: '#F0F4F2',
     paddingTop: 8,
-    marginTop: 4,
+    gap: 6,
   },
-  recentHeader: {
+  recentHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  clearRecentText: {
-    fontSize: 11,
-    fontFamily: lightAppTheme.fontFamily.persianMedium,
-    color: lightAppTheme.colors.coral,
+  clearHistoryText: {
+    fontSize: 10.5,
   },
-  recentList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 6,
-  },
-  recentItem: {
+  recentChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F7FAFC',
-    borderRadius: 6,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
     paddingLeft: 4,
   },
-  recentItemBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+  recentChipBtn: {
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
-  recentItemText: {
-    fontSize: 11.5,
-    fontFamily: lightAppTheme.fontFamily.persianRegular,
-    color: lightAppTheme.colors.primaryText,
+  recentChipText: {
+    fontSize: 11,
   },
-  recentItemRemove: {
+  recentChipRemove: {
     padding: 4,
   },
   resultsCounterRow: {
@@ -391,24 +759,8 @@ const styles = StyleSheet.create({
   },
   counterText: {
     fontSize: 12,
-    fontFamily: lightAppTheme.fontFamily.persianMedium,
-    color: lightAppTheme.colors.secondaryText,
-  },
-  activeFilterTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#FDF2F2',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  activeFilterTagText: {
-    fontSize: 10.5,
-    fontFamily: lightAppTheme.fontFamily.persianMedium,
-    color: lightAppTheme.colors.coral,
   },
   listContent: {
-    paddingBottom: 20,
+    paddingBottom: 24,
   },
 });

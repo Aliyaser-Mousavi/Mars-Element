@@ -1,16 +1,23 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { lightAppTheme } from '../../theme';
+import React, { useState } from 'react';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { CATEGORY_COLOR_MAP } from '../../constants/colors';
 import {
   PERIODIC_TRENDS,
   TrendProperty,
   getTrendDataForPeriod,
 } from '../../services/periodicTrendsService';
-import { CATEGORY_COLOR_MAP } from '../../constants/colors';
+import { useTheme } from '../../theme';
 import { toPersianDigits } from '../../utils/rtl';
 
 export const PeriodicTrendsView: React.FC = () => {
+  const theme = useTheme();
   const [selectedTrend, setSelectedTrend] = useState<TrendProperty>('atomicRadius');
   const [selectedPeriod, setSelectedPeriod] = useState<number>(3); // Period 3 is the ideal textbook example (Na to Ar)
 
@@ -25,24 +32,52 @@ export const PeriodicTrendsView: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>روندهای تناوبی عناصر (Periodic Trends)</Text>
-      <Text style={styles.subtitle}>
-        بررسی الگوهای تغییرات دوره‌ای و گروهی در سراسر جدول تناوبی
-      </Text>
+      {/* Title & Subtitle */}
+      <View style={styles.header}>
+        <View style={styles.titleRow}>
+          <Ionicons name="trending-up-outline" size={20} color={theme.colors.forestGreen} />
+          <Text style={[styles.title, { color: theme.colors.primaryText }]}>
+            روندهای تناوبی در جدول تناوبی
+          </Text>
+        </View>
+        <Text style={[styles.subtitle, { color: theme.colors.secondaryText }]}>
+          بررسی الگوهای رفتاری خواص اتمی در طول دوره‌ها و گروه‌های جدول:
+        </Text>
+      </View>
 
       {/* Trend Selector Chips */}
-      <View style={styles.chipsRow}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+      <View style={styles.selectorSection}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chipsScroll}
+        >
           {(Object.keys(PERIODIC_TRENDS) as TrendProperty[]).map((key) => {
             const tr = PERIODIC_TRENDS[key];
             const active = selectedTrend === key;
             return (
               <TouchableOpacity
                 key={key}
-                style={[styles.trendChip, active && styles.trendChipActive]}
+                style={[
+                  styles.trendChip,
+                  active
+                    ? [styles.trendChipActive, { backgroundColor: theme.colors.scientificGreen }]
+                    : {
+                        backgroundColor: theme.isDark
+                          ? 'rgba(255, 255, 255, 0.06)'
+                          : '#F1F5F9',
+                        borderColor: theme.colors.border,
+                      },
+                ]}
+                activeOpacity={0.7}
                 onPress={() => setSelectedTrend(key)}
               >
-                <Text style={[styles.trendChipText, active && styles.trendChipTextActive]}>
+                <Text
+                  style={[
+                    styles.trendChipText,
+                    { color: active ? '#FFFFFF' : theme.colors.primaryText },
+                  ]}
+                >
                   {tr.titleFa.split(' (')[0]}
                 </Text>
               </TouchableOpacity>
@@ -51,79 +86,203 @@ export const PeriodicTrendsView: React.FC = () => {
         </ScrollView>
       </View>
 
-      {/* Explanatory Rules Box */}
-      <View style={styles.rulesBox}>
+      {/* Explanatory Directional Rules Box */}
+      <View
+        style={[
+          styles.rulesBox,
+          {
+            backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8FAFC',
+            borderColor: theme.colors.border,
+          },
+        ]}
+      >
         <View style={styles.ruleItem}>
-          <Ionicons name="arrow-back" size={16} color={lightAppTheme.colors.scientificGreen} />
-          <Text style={styles.ruleText}>{trendInfo.horizontalRuleFa}</Text>
+          <View
+            style={[
+              styles.ruleIconCircle,
+              { backgroundColor: theme.isDark ? 'rgba(38, 125, 104, 0.2)' : theme.colors.lightGreen },
+            ]}
+          >
+            <Ionicons name="arrow-back" size={16} color={theme.colors.scientificGreen} />
+          </View>
+          <View style={styles.ruleContent}>
+            <Text style={[styles.ruleTitle, { color: theme.colors.scientificGreen }]}>
+              تغییرات در طول دوره (چپ به راست):
+            </Text>
+            <Text style={[styles.ruleText, { color: theme.colors.primaryText }]}>
+              {trendInfo.horizontalRuleFa}
+            </Text>
+          </View>
         </View>
+
+        <View
+          style={[
+            styles.ruleDivider,
+            { backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0' },
+          ]}
+        />
+
         <View style={styles.ruleItem}>
-          <Ionicons name="arrow-down" size={16} color={lightAppTheme.colors.oceanBlue} />
-          <Text style={styles.ruleText}>{trendInfo.verticalRuleFa}</Text>
+          <View
+            style={[
+              styles.ruleIconCircle,
+              { backgroundColor: theme.isDark ? 'rgba(70, 137, 184, 0.2)' : '#E0F2FE' },
+            ]}
+          >
+            <Ionicons name="arrow-down" size={16} color="#0284C7" />
+          </View>
+          <View style={styles.ruleContent}>
+            <Text style={[styles.ruleTitle, { color: '#0284C7' }]}>
+              تغییرات در طول گروه (بالا به پایین):
+            </Text>
+            <Text style={[styles.ruleText, { color: theme.colors.primaryText }]}>
+              {trendInfo.verticalRuleFa}
+            </Text>
+          </View>
         </View>
       </View>
 
       {/* Period Selector Tabs for Graph */}
       <View style={styles.periodRow}>
-        <Text style={styles.periodLabel}>مشاهده در دوره:</Text>
-        {[1, 2, 3, 4, 5, 6, 7].map((p) => {
-          const active = selectedPeriod === p;
-          return (
-            <TouchableOpacity
-              key={p}
-              style={[styles.periodBtn, active && styles.periodBtnActive]}
-              onPress={() => setSelectedPeriod(p)}
-            >
-              <Text style={[styles.periodBtnText, active && styles.periodBtnTextActive]}>
-                {toPersianDigits(p)}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      {/* Trend Interactive Bar Chart */}
-      <View style={styles.chartBox}>
-        <Text style={styles.chartTitle}>
-          نمودار {trendInfo.titleFa.split(' (')[0]} در دوره {toPersianDigits(selectedPeriod)}:
+        <Text style={[styles.periodLabel, { color: theme.colors.secondaryText }]}>
+          مشاهده در دوره تناوبی:
         </Text>
-
-        <View style={styles.barsContainer}>
-          {dataPoints.map((dp) => {
-            const catColor = CATEGORY_COLOR_MAP[dp.element.classification.category] || lightAppTheme.colors.scientificGreen;
-            const hasVal = dp.value !== null && !isNaN(dp.value);
-            const heightPercent = hasVal ? Math.max(12, (dp.value! / maxValue) * 100) : 6;
-
+        <View style={styles.periodBtnsWrap}>
+          {[1, 2, 3, 4, 5, 6, 7].map((p) => {
+            const active = selectedPeriod === p;
             return (
-              <View key={dp.element.identity.atomicNumber} style={styles.barCol}>
-                <Text style={styles.barValText}>
-                  {hasVal ? toPersianDigits(Math.round(dp.value!)) : '-'}
-                </Text>
-                
-                <View style={styles.barTrack}>
-                  <View
-                    style={[
-                      styles.barFill,
-                      {
-                        height: `${heightPercent}%`,
-                        backgroundColor: hasVal ? catColor : '#E2E8F0',
+              <TouchableOpacity
+                key={p}
+                style={[
+                  styles.periodBtn,
+                  active
+                    ? [styles.periodBtnActive, { backgroundColor: theme.colors.forestGreen }]
+                    : {
+                        backgroundColor: theme.isDark
+                          ? 'rgba(255, 255, 255, 0.06)'
+                          : '#F1F5F9',
+                        borderColor: theme.colors.border,
                       },
-                    ]}
-                  />
-                </View>
-
-                <Text style={styles.barSymbolText}>{dp.element.identity.symbol}</Text>
-                <Text style={styles.barNumText}>{toPersianDigits(dp.element.identity.atomicNumber)}</Text>
-              </View>
+                ]}
+                activeOpacity={0.7}
+                onPress={() => setSelectedPeriod(p)}
+              >
+                <Text
+                  style={[
+                    styles.periodBtnText,
+                    { color: active ? '#FFFFFF' : theme.colors.primaryText },
+                  ]}
+                >
+                  دوره {toPersianDigits(p)}
+                </Text>
+              </TouchableOpacity>
             );
           })}
         </View>
       </View>
 
+      {/* Interactive Bar Chart */}
+      <View
+        style={[
+          styles.chartBox,
+          {
+            backgroundColor: theme.colors.surface,
+            borderColor: theme.colors.border,
+          },
+        ]}
+      >
+        <View style={styles.chartHeader}>
+          <Text style={[styles.chartTitle, { color: theme.colors.primaryText }]}>
+            نمودار مقایسه‌ای {trendInfo.titleFa.split(' (')[0]}
+          </Text>
+          <Text style={[styles.chartUnitText, { color: theme.colors.secondaryText }]}>
+            واحد: {trendInfo.unitFa}
+          </Text>
+        </View>
+
+        {/* Scrollable Container so periods with 18+ elements never clip */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.barsScrollContent}
+        >
+          <View style={styles.barsContainer}>
+            {dataPoints.map((dp) => {
+              const catColor =
+                CATEGORY_COLOR_MAP[dp.element.classification.category] ||
+                theme.colors.scientificGreen;
+              const hasVal = dp.value !== null && !isNaN(dp.value);
+              const heightPercent = hasVal ? Math.max(10, (dp.value! / maxValue) * 100) : 4;
+
+              return (
+                <View key={dp.element.identity.atomicNumber} style={styles.barCol}>
+                  {/* Numerical Value above bar */}
+                  <Text
+                    style={[styles.barValText, { color: theme.colors.secondaryText }]}
+                    numberOfLines={1}
+                  >
+                    {hasVal ? toPersianDigits(Math.round(dp.value! * 10) / 10) : 'نامشخص'}
+                  </Text>
+
+                  {/* Vertical Track & Fill */}
+                  <View
+                    style={[
+                      styles.barTrack,
+                      {
+                        backgroundColor: theme.isDark
+                          ? 'rgba(255, 255, 255, 0.06)'
+                          : '#EDF2F0',
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.barFill,
+                        {
+                          height: `${heightPercent}%`,
+                          backgroundColor: hasVal
+                            ? catColor
+                            : theme.isDark
+                            ? 'rgba(255, 255, 255, 0.1)'
+                            : '#CBD5E1',
+                        },
+                      ]}
+                    />
+                  </View>
+
+                  {/* Chemical Symbol & Atomic Number */}
+                  <Text style={[styles.barSymbolText, { color: theme.colors.primaryText }]}>
+                    {dp.element.identity.symbol}
+                  </Text>
+                  <Text style={[styles.barNumText, { color: theme.colors.secondaryText }]}>
+                    {toPersianDigits(dp.element.identity.atomicNumber)}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        </ScrollView>
+      </View>
+
       {/* Full Educational Article Box */}
-      <View style={styles.explanationBox}>
-        <Text style={styles.explanationHeading}>توجیه علمی و مفاهیم بنیادین:</Text>
-        <Text style={styles.explanationBody}>{trendInfo.explanationFa}</Text>
+      <View
+        style={[
+          styles.explanationBox,
+          {
+            backgroundColor: theme.isDark ? 'rgba(38, 125, 104, 0.12)' : '#F0F9F5',
+            borderRightColor: theme.colors.scientificGreen,
+          },
+        ]}
+      >
+        <View style={styles.explanationHeader}>
+          <Ionicons name="school-outline" size={18} color={theme.colors.scientificGreen} />
+          <Text style={[styles.explanationHeading, { color: theme.colors.forestGreen }]}>
+            توجیه علمی و مفاهیم بنیادین کوانتومی:
+          </Text>
+        </View>
+        <Text style={[styles.explanationBody, { color: theme.colors.primaryText }]}>
+          {trendInfo.explanationFa}
+        </Text>
       </View>
     </View>
   );
@@ -131,179 +290,193 @@ export const PeriodicTrendsView: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: lightAppTheme.colors.surface,
-    borderRadius: lightAppTheme.borderRadius.md,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: lightAppTheme.colors.border,
-    marginBottom: 14,
+    gap: 12,
+  },
+  header: {
+    gap: 4,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   title: {
-    fontSize: 14,
-    fontFamily: lightAppTheme.fontFamily.persianBold,
-    color: lightAppTheme.colors.forestGreen,
+    fontSize: 14.5,
+    fontFamily: 'Vazirmatn-Bold',
   },
   subtitle: {
     fontSize: 11.5,
-    fontFamily: lightAppTheme.fontFamily.persianRegular,
-    color: lightAppTheme.colors.secondaryText,
-    marginTop: 2,
-    marginBottom: 10,
+    fontFamily: 'Vazirmatn-Regular',
+    lineHeight: 18,
   },
-  chipsRow: {
-    flexDirection: 'row',
-    marginBottom: 10,
+  selectorSection: {
+    marginVertical: 2,
+  },
+  chipsScroll: {
+    gap: 6,
+    paddingVertical: 2,
   },
   trendChip: {
-    backgroundColor: '#F1F5F9',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     borderRadius: 8,
-    marginRight: 6,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
   },
   trendChipActive: {
-    backgroundColor: lightAppTheme.colors.scientificGreen,
-    borderColor: lightAppTheme.colors.scientificGreen,
+    borderColor: 'transparent',
   },
   trendChipText: {
-    fontSize: 11.5,
-    fontFamily: lightAppTheme.fontFamily.persianMedium,
-    color: lightAppTheme.colors.primaryText,
-  },
-  trendChipTextActive: {
-    color: '#FFFFFF',
-    fontFamily: lightAppTheme.fontFamily.persianBold,
+    fontSize: 12,
+    fontFamily: 'Vazirmatn-Medium',
   },
   rulesBox: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: 8,
-    padding: 10,
-    gap: 6,
-    marginBottom: 12,
+    borderRadius: 12,
+    padding: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    gap: 10,
   },
   ruleItem: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    alignItems: 'flex-start',
+    gap: 10,
   },
-  ruleText: {
-    flex: 1,
-    fontSize: 11.5,
-    fontFamily: lightAppTheme.fontFamily.persianMedium,
-    color: lightAppTheme.colors.primaryText,
-    lineHeight: 18,
-  },
-  periodRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 12,
-  },
-  periodLabel: {
-    fontSize: 11.5,
-    fontFamily: lightAppTheme.fontFamily.persianBold,
-    color: lightAppTheme.colors.secondaryText,
-  },
-  periodBtn: {
+  ruleIconCircle: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+  ruleContent: {
+    flex: 1,
+  },
+  ruleTitle: {
+    fontSize: 11.5,
+    fontFamily: 'Vazirmatn-Bold',
+    marginBottom: 2,
+  },
+  ruleText: {
+    fontSize: 11.5,
+    fontFamily: 'Vazirmatn-Regular',
+    lineHeight: 18,
+  },
+  ruleDivider: {
+    height: 1,
+  },
+  periodRow: {
+    gap: 8,
+  },
+  periodLabel: {
+    fontSize: 11.5,
+    fontFamily: 'Vazirmatn-Bold',
+  },
+  periodBtnsWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  periodBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   periodBtnActive: {
-    backgroundColor: lightAppTheme.colors.forestGreen,
+    borderColor: 'transparent',
   },
   periodBtnText: {
     fontSize: 11,
-    fontFamily: lightAppTheme.fontFamily.persianBold,
-    color: lightAppTheme.colors.primaryText,
-  },
-  periodBtnTextActive: {
-    color: '#FFFFFF',
+    fontFamily: 'Vazirmatn-Bold',
   },
   chartBox: {
-    backgroundColor: '#FAFCFB',
-    borderRadius: 8,
-    padding: 10,
+    borderRadius: 14,
+    padding: 14,
     borderWidth: 1,
-    borderColor: '#EAEFEA',
-    marginBottom: 10,
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  chartHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   chartTitle: {
-    fontSize: 11.5,
-    fontFamily: lightAppTheme.fontFamily.persianBold,
-    color: lightAppTheme.colors.primaryText,
-    marginBottom: 8,
+    fontSize: 12.5,
+    fontFamily: 'Vazirmatn-Bold',
+  },
+  chartUnitText: {
+    fontSize: 10.5,
+    fontFamily: 'Vazirmatn-Medium',
+  },
+  barsScrollContent: {
+    paddingVertical: 6,
   },
   barsContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    height: 140,
-    gap: 6,
-    paddingBottom: 4,
+    height: 160,
+    gap: 8,
   },
   barCol: {
-    flex: 1,
+    width: 38,
     alignItems: 'center',
     height: '100%',
     justifyContent: 'flex-end',
   },
   barValText: {
-    fontSize: 8.5,
-    fontFamily: lightAppTheme.fontFamily.persianRegular,
-    color: lightAppTheme.colors.secondaryText,
-    marginBottom: 3,
+    fontSize: 9,
+    fontFamily: 'Vazirmatn-Bold',
+    marginBottom: 4,
+    textAlign: 'center',
   },
   barTrack: {
     width: '100%',
-    height: 90,
-    backgroundColor: '#EDF2F0',
-    borderRadius: 4,
+    height: 100,
+    borderRadius: 6,
     justifyContent: 'flex-end',
     overflow: 'hidden',
   },
   barFill: {
     width: '100%',
-    borderTopLeftRadius: 4,
-    borderTopRightRadius: 4,
+    borderTopLeftRadius: 6,
+    borderTopRightRadius: 6,
   },
   barSymbolText: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: 'System',
     fontWeight: 'bold',
-    color: lightAppTheme.colors.primaryText,
-    marginTop: 4,
+    marginTop: 5,
   },
   barNumText: {
-    fontSize: 8.5,
-    fontFamily: lightAppTheme.fontFamily.persianMedium,
-    color: lightAppTheme.colors.secondaryText,
+    fontSize: 9.5,
+    fontFamily: 'Vazirmatn-Medium',
   },
   explanationBox: {
-    backgroundColor: '#F0F9F5',
-    borderRadius: 8,
-    padding: 10,
-    borderRightWidth: 3,
-    borderRightColor: lightAppTheme.colors.scientificGreen,
+    borderRadius: 12,
+    padding: 12,
+    borderRightWidth: 4,
+    gap: 6,
+  },
+  explanationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   explanationHeading: {
-    fontSize: 11.5,
-    fontFamily: lightAppTheme.fontFamily.persianBold,
-    color: lightAppTheme.colors.forestGreen,
-    marginBottom: 4,
+    fontSize: 12.5,
+    fontFamily: 'Vazirmatn-Bold',
   },
   explanationBody: {
     fontSize: 11.5,
-    fontFamily: lightAppTheme.fontFamily.persianRegular,
-    color: lightAppTheme.colors.primaryText,
-    lineHeight: 19,
+    fontFamily: 'Vazirmatn-Regular',
+    lineHeight: 20,
     textAlign: 'justify',
   },
 });
-

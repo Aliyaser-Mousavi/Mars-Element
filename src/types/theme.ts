@@ -34,7 +34,18 @@ export interface SemanticColors {
   info: string;
 }
 
-export interface ThemeColors extends PaletteColors {
+export interface ComponentColors {
+  card: string;
+  cardBorder: string;
+  separator: string;
+  inputBackground: string;
+  inputBorder: string;
+  chipBackground: string;
+  chipBorder: string;
+  shadow: string;
+}
+
+export interface ThemeColors extends PaletteColors, ComponentColors {
   surfaceElevated: string;
   surfaceMuted: string;
   elementFamilies: ElementFamilyColors;
@@ -54,10 +65,15 @@ export interface TypographyScale {
   largeHeading: TypographyStyle;
   pageHeading: TypographyStyle;
   sectionHeading: TypographyStyle;
+  titleMedium: TypographyStyle;
+  subtitle: TypographyStyle;
   bodyLarge: TypographyStyle;
   bodyMedium: TypographyStyle;
   bodySmall: TypographyStyle;
+  buttonLabel: TypographyStyle;
+  chipLabel: TypographyStyle;
   caption: TypographyStyle;
+  overline: TypographyStyle;
   elementSymbol: TypographyStyle;
   atomicNumber: TypographyStyle;
   scientificValue: TypographyStyle;
@@ -73,6 +89,7 @@ export interface SpacingScale {
   xl: number;
   xxl: number;
   xxxl: number;
+  huge: number;
 }
 
 export interface BorderRadiusScale {
@@ -85,3 +102,27 @@ export interface BorderRadiusScale {
   full: number;
 }
 
+export interface IconSizeScale {
+  xs: number;
+  sm: number;
+  md: number;
+  lg: number;
+  xl: number;
+  xxl: number;
+  hero: number;
+}
+
+export interface ShadowStyle {
+  shadowColor: string;
+  shadowOffset: { width: number; height: number };
+  shadowOpacity: number;
+  shadowRadius: number;
+  elevation: number;
+}
+
+export interface ShadowScale {
+  none: ShadowStyle;
+  sm: ShadowStyle;
+  md: ShadowStyle;
+  lg: ShadowStyle;
+}

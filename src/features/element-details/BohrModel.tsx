@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet, Text, useWindowDimensions } from 'react-native';
 import Svg, { Circle, G, Text as SvgText } from 'react-native-svg';
-import { lightAppTheme } from '../../theme';
-import { toPersianDigits } from '../../utils';
+import { useTheme } from '@/theme';
+import { toPersianDigits } from '@/utils';
 
 interface BohrModelProps {
   symbol: string;
@@ -19,23 +19,33 @@ export const BohrModel: React.FC<BohrModelProps> = ({
   symbol,
   protons,
   shells,
-  accentColor = lightAppTheme.colors.scientificGreen,
-  size = 320,
+  accentColor,
+  size,
 }) => {
-  const center = size / 2;
-  const numShells = shells.length;
+  const theme = useTheme();
+  const { width: screenWidth } = useWindowDimensions();
 
-  // Dynamic radius distribution
-  const nucleusRadius = Math.max(22, Math.min(30, size * 0.08));
-  const availableRadius = center - nucleusRadius - 20; // 20px padding
-  const shellStep = availableRadius / Math.max(numShells, 1);
+  const color = accentColor || theme.colors.scientificGreen;
+
+  // Responsive diagram dimension: adapts safely to mobile viewports without clipping
+  const diagramSize = size || Math.min(Math.max(screenWidth - 60, 240), 290);
+  const center = diagramSize / 2;
+  const numShells = Math.max(shells.length, 1);
+
+  // Dynamic radius distribution: 16px safety padding prevents electron glow clipping
+  const nucleusRadius = Math.max(20, Math.min(27, diagramSize * 0.085));
+  const availableRadius = center - nucleusRadius - 16;
+  const shellStep = availableRadius / numShells;
+
+  const totalElectrons = shells.reduce((acc, curr) => acc + curr, 0);
 
   return (
     <View style={styles.container}>
-      <View style={[styles.svgWrapper, { width: size, height: size }]}>
-        <Svg width={size} height={size}>
+      {/* SVG Canvas */}
+      <View style={[styles.svgWrapper, { width: diagramSize, height: diagramSize }]}>
+        <Svg width={diagramSize} height={diagramSize} viewBox={`0 0 ${diagramSize} ${diagramSize}`}>
           {/* Concentric Shells (Orbits) */}
-          {shells.map((count, index) => {
+          {shells.map((_, index) => {
             const radius = nucleusRadius + (index + 1) * shellStep;
             return (
               <G key={`orbit-${index}`}>
@@ -44,9 +54,9 @@ export const BohrModel: React.FC<BohrModelProps> = ({
                   cy={center}
                   r={radius}
                   fill="none"
-                  stroke={lightAppTheme.colors.border}
+                  stroke={theme.isDark ? '#274239' : '#D1DFD8'}
                   strokeWidth="1.2"
-                  strokeDasharray="3 3"
+                  strokeDasharray="3 3.5"
                 />
               </G>
             );
@@ -56,7 +66,7 @@ export const BohrModel: React.FC<BohrModelProps> = ({
           {shells.map((count, shellIdx) => {
             const radius = nucleusRadius + (shellIdx + 1) * shellStep;
             const electrons = [];
-            // Offset initial angle slightly per shell for natural planetary aesthetic
+            // Offset initial angle per shell for natural planetary aesthetic
             const angleOffset = (shellIdx * Math.PI) / 6;
 
             for (let i = 0; i < count; i++) {
@@ -65,10 +75,17 @@ export const BohrModel: React.FC<BohrModelProps> = ({
               const cy = center + radius * Math.sin(angle);
               electrons.push(
                 <G key={`electron-${shellIdx}-${i}`}>
-                  {/* Glow/halo */}
-                  <Circle cx={cx} cy={cy} r="4.5" fill={accentColor} opacity="0.25" />
-                  {/* Core dot */}
-                  <Circle cx={cx} cy={cy} r="3" fill={accentColor} />
+                  {/* Outer glow/halo */}
+                  <Circle cx={cx} cy={cy} r="4.2" fill={color} opacity="0.25" />
+                  {/* Core electron dot */}
+                  <Circle
+                    cx={cx}
+                    cy={cy}
+                    r="2.8"
+                    fill={color}
+                    stroke={theme.colors.card}
+                    strokeWidth="0.8"
+                  />
                 </G>
               );
             }
@@ -80,8 +97,8 @@ export const BohrModel: React.FC<BohrModelProps> = ({
             cx={center}
             cy={center}
             r={nucleusRadius}
-            fill={accentColor}
-            stroke={lightAppTheme.colors.surface}
+            fill={color}
+            stroke={theme.colors.card}
             strokeWidth="2.5"
           />
 
@@ -92,7 +109,7 @@ export const BohrModel: React.FC<BohrModelProps> = ({
             textAnchor="middle"
             alignmentBaseline="middle"
             fill="#FFFFFF"
-            fontSize="14"
+            fontSize="13.5"
             fontWeight="bold"
             fontFamily="System"
           >
@@ -102,10 +119,10 @@ export const BohrModel: React.FC<BohrModelProps> = ({
           {/* Nucleus Protons Counter */}
           <SvgText
             x={center}
-            y={center + 11}
+            y={center + 10}
             textAnchor="middle"
             alignmentBaseline="middle"
-            fill="rgba(255,255,255,0.85)"
+            fill="rgba(255,255,255,0.9)"
             fontSize="9"
             fontWeight="600"
             fontFamily="System"
@@ -118,11 +135,54 @@ export const BohrModel: React.FC<BohrModelProps> = ({
       {/* Shell Breakdown Badges (K, L, M, N...) */}
       <View style={styles.shellLegend}>
         {shells.map((count, idx) => (
-          <View key={`badge-${idx}`} style={styles.shellBadge}>
-            <Text style={styles.shellLetter}>{SHELL_LETTERS[idx] || `n${idx + 1}`}</Text>
-            <Text style={styles.shellCount}>{toPersianDigits(count)}e⁻</Text>
+          <View
+            key={`badge-${idx}`}
+            style={[
+              styles.shellBadge,
+              {
+                backgroundColor: theme.isDark ? theme.colors.surfaceElevated : theme.colors.card,
+                borderColor: theme.colors.cardBorder,
+              },
+            ]}
+          >
+            <Text style={[styles.shellLetter, { color }]}>
+              {SHELL_LETTERS[idx] || `n${idx + 1}`}
+            </Text>
+            <Text
+              style={[
+                styles.shellCount,
+                {
+                  color: theme.colors.primaryText,
+                  fontFamily: theme.fontFamily.persianMedium,
+                },
+              ]}
+            >
+              {toPersianDigits(count)}e⁻
+            </Text>
           </View>
         ))}
+      </View>
+
+      {/* Total Electrons Summary */}
+      <View
+        style={[
+          styles.summaryPill,
+          {
+            backgroundColor: theme.isDark ? `${color}20` : theme.colors.lightGreen,
+          },
+        ]}
+      >
+        <Text
+          style={[
+            styles.summaryText,
+            {
+              color: theme.isDark ? theme.colors.primaryText : theme.colors.forestGreen,
+              fontFamily: theme.fontFamily.persianMedium,
+            },
+          ]}
+        >
+          مجموع {toPersianDigits(totalElectrons)} الکترون در {toPersianDigits(shells.length)} لایه اصلی
+        </Text>
       </View>
     </View>
   );
@@ -132,7 +192,7 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 12,
+    marginVertical: 8,
   },
   svgWrapper: {
     alignItems: 'center',
@@ -142,29 +202,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 8,
-    marginTop: 12,
-    paddingHorizontal: 16,
+    gap: 6,
+    marginTop: 10,
+    paddingHorizontal: 12,
   },
   shellBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: lightAppTheme.colors.lightGreen,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: lightAppTheme.colors.border,
+    gap: 4,
   },
   shellLetter: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: lightAppTheme.colors.forestGreen,
-    marginRight: 4,
+    fontSize: 10.5,
+    fontWeight: '700',
   },
   shellCount: {
-    fontSize: 11,
-    fontFamily: lightAppTheme.fontFamily.persianMedium,
-    color: lightAppTheme.colors.primaryText,
+    fontSize: 10.5,
+  },
+  summaryPill: {
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  summaryText: {
+    fontSize: 10.5,
   },
 });
